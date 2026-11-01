@@ -90,7 +90,7 @@ public class AiService {
                 )
         );
 
-        // 4. Gemini API 호출 (보안 헤더 & 타임아웃 & 예외 매핑 적용)
+        // 4. Gemini API 호출
         Map response;
         try {
             response = webClient.post()
@@ -104,14 +104,14 @@ public class AiService {
                     .block();
 
         } catch (WebClientResponseException e) {
-            log.error("Gemini API 호출 실패 - Status: {}, Body: {}", e.getStatusCode(), e.getResponseBodyAsString());
-            if (e.getStatusCode().is5xxServerError()) {
-                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스가 일시적으로 이용 불가합니다.");
-            }
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI 추천 처리 중 외부 서비스 오류가 발생했습니다.");
+            log.error("Gemini API 호출 실패 status={} body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            HttpStatus status = e.getStatusCode().is5xxServerError()
+                    ? HttpStatus.SERVICE_UNAVAILABLE
+                    : HttpStatus.BAD_GATEWAY;
+            throw new ResponseStatusException(status, "AI 서비스 호출에 실패했습니다.");
         } catch (Exception e) {
-            log.error("Gemini API 통신 문제 발생", e);
-            throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "AI 추천 응답 시간이 초과되었습니다.");
+            log.error("Gemini API 통신 또는 파싱 오류 발생", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "AI 연동 처리 중 오류가 발생했습니다.");
         }
 
         // 5. 응답 파싱 및 검증
