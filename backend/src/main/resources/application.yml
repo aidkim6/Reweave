@@ -15,3 +15,8 @@ jwt:
   secret: ${JWT_SECRET}
   access-token-expiration-seconds: 1800
   refresh-token-expiration-seconds: 1209600
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY}
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent
