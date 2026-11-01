@@ -12,12 +12,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -33,29 +36,24 @@ public class AiService {
     private final BookmarkRepository bookmarkRepository;
     private final WebClient webClient = WebClient.create();
 
-    // 입력 토큰 폭주 방지용 북마크 최대 개수 및 요약 글자수 제약
     private static final int MAX_CANDIDATE_BOOKMARKS = 50;
     private static final int MAX_SUMMARY_LENGTH = 150;
 
     public AiRecommendResponse recommendBookmarksForPurpose(Long userId, AiRecommendRequest request) {
-        // 1. 카테고리 내 북마크 1차 조회
-        List<Bookmark> targetBookmarks = bookmarkRepository.findByUserIdAndCategoryIdInAndDeletedDateIsNull(userId, request.categoryIds());
+        // 1. DB 레벨에서 최신순 상위 50개만 조회
+        Pageable pageable = PageRequest.of(0, MAX_CANDIDATE_BOOKMARKS);
+        List<Bookmark> targetBookmarks = bookmarkRepository
+                .findByUserIdAndCategoryIdInAndDeletedDateIsNullOrderByIdDesc(userId, request.categoryIds(), pageable);
 
         if (targetBookmarks.isEmpty()) {
             return new AiRecommendResponse(List.of(), "선택하신 카테고리에 저장된 북마크가 없습니다.");
         }
 
-        // 후보 북마크가 너무 많을 경우 최근 N개로 제한 (성능 및 토큰 절약)
-        if (targetBookmarks.size() > MAX_CANDIDATE_BOOKMARKS) {
-            targetBookmarks = targetBookmarks.subList(0, MAX_CANDIDATE_BOOKMARKS);
-        }
-
-        // 유효한 후보 ID Set 구축 (AI가 환각/인젝션으로 다른 유저 ID를 반환하는 것 방지)
         Set<Long> validCandidateIds = targetBookmarks.stream()
                 .map(Bookmark::getId)
                 .collect(Collectors.toSet());
 
-        // 2. 프롬프트용 북마크 데이터 생성 (null 처리 및 길이 자르기)
+        // 2. 프롬프트용 북마크 데이터 생성
         String bookmarkDataText = targetBookmarks.stream()
                 .map(b -> {
                     String rawSummary = b.getSummary() != null ? b.getSummary() : "";
@@ -136,22 +134,28 @@ public class AiService {
         }
     }
 
-    // AI가 반환한 ID 중 실제 후보 목록에 존재하는 ID만 추출 (Security Validation)
+    // ID 매칭 추출 로직 수정 (find() 중복 소모 방지)
     private List<Long> extractAndValidateBookmarkIds(String text, Set<Long> validCandidateIds) {
         List<Long> ids = new ArrayList<>();
+        if (text == null || text.isBlank()) return ids;
 
-        // '추천 ID:' 라인 우선 탐색
-        Pattern pattern = Pattern.compile("추천\\s*ID\\s*:\\s*\\[(.*?)\\]");
-        Matcher matcher = pattern.matcher(text);
+        // 우선 '추천 ID:' 뒤의 대괄호 구문 탐색
+        Pattern primaryPattern = Pattern.compile("추천\\s*ID\\s*:\\s*\\[(.*?)\\]");
+        Matcher matcher = primaryPattern.matcher(text);
 
-        if (!matcher.find()) {
-            // 차선책으로 일반 대괄호 탐색
-            pattern = Pattern.compile("\\[(.*?)\\]");
-            matcher = pattern.matcher(text);
+        String idGroup = null;
+        if (matcher.find()) {
+            idGroup = matcher.group(1);
+        } else {
+            // 실패 시 일반 대괄호 탐색 (매치 포인터 재설정)
+            Pattern fallbackPattern = Pattern.compile("\\[(.*?)\\]");
+            Matcher fallbackMatcher = fallbackPattern.matcher(text);
+            if (fallbackMatcher.find()) {
+                idGroup = fallbackMatcher.group(1);
+            }
         }
 
-        if (matcher.find()) {
-            String idGroup = matcher.group(1);
+        if (idGroup != null) {
             String[] split = idGroup.split(",");
             for (String s : split) {
                 try {
@@ -165,7 +169,6 @@ public class AiService {
         return ids;
     }
 
-    // 이유 부분 텍스트만 추출
     private String extractReasonText(String text) {
         if (text == null) return "";
         int reasonIndex = text.indexOf("이유:");
