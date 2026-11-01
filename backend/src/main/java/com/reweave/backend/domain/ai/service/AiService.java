@@ -134,21 +134,21 @@ public class AiService {
         }
     }
 
-    // ID 매칭 추출 로직 수정 (find() 중복 소모 방지)
+    // ID 매칭 추출 로직 수정 (멀티라인 대괄호 지원)
     private List<Long> extractAndValidateBookmarkIds(String text, Set<Long> validCandidateIds) {
         List<Long> ids = new ArrayList<>();
         if (text == null || text.isBlank()) return ids;
 
-        // 우선 '추천 ID:' 뒤의 대괄호 구문 탐색
-        Pattern primaryPattern = Pattern.compile("추천\\s*ID\\s*:\\s*\\[(.*?)\\]");
+        // Pattern.DOTALL을 추가하여 줄바꿈(\n)이 포함된 [ID1, ID2, ...] 형태도 파싱 가능하도록 수정
+        Pattern primaryPattern = Pattern.compile("추천\\s*ID\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL);
         Matcher matcher = primaryPattern.matcher(text);
 
         String idGroup = null;
         if (matcher.find()) {
             idGroup = matcher.group(1);
         } else {
-            // 실패 시 일반 대괄호 탐색 (매치 포인터 재설정)
-            Pattern fallbackPattern = Pattern.compile("\\[(.*?)\\]");
+            // 실패 시 일반 대괄호 탐색 (DOTALL 적용)
+            Pattern fallbackPattern = Pattern.compile("\\[(.*?)\\]", Pattern.DOTALL);
             Matcher fallbackMatcher = fallbackPattern.matcher(text);
             if (fallbackMatcher.find()) {
                 idGroup = fallbackMatcher.group(1);
@@ -156,8 +156,10 @@ public class AiService {
         }
 
         if (idGroup != null) {
-            String[] split = idGroup.split(",");
+            // 쉼표, 줄바꿈(\n), 공백 섞여있어도 안전하게 분리되도록 정규식 스플릿 적용
+            String[] split = idGroup.split("[,\\s]+");
             for (String s : split) {
+                if (s.isBlank()) continue;
                 try {
                     Long parsedId = Long.parseLong(s.trim());
                     if (validCandidateIds.contains(parsedId)) {
