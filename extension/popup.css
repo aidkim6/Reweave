@@ -220,6 +220,19 @@ body {
 .hint-text { font-size: 14px; line-height: 17px; color: var(--text-muted); }
 
 
+/* 오류 문구: 레이아웃을 밀지 않도록 위치 고정 (디자인에 없는 요소) */
+.error-text {
+  position: absolute;
+  top: 452px;
+  left: 0;
+  width: 312px;
+  font-size: 13px;
+  line-height: 17px;
+  text-align: center;
+  color: #FF7A7A;
+}
+.error-text.error-login { top: 359px; }
+
 /* ---------- 화면 1: 로그인 ---------- */
 #screen-login { align-items: center; justify-content: flex-start; }
 .login-logo {

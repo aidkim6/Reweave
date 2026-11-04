@@ -18,11 +18,12 @@
     </div>
 
     <div class="login-fields">
-      <input type="email" class="field field-top" placeholder="이메일" />
-      <input type="password" class="field field-bottom" placeholder="비밀번호" />
+      <input type="email" class="field field-top" id="login-email" placeholder="이메일" />
+      <input type="password" class="field field-bottom" id="login-password" placeholder="비밀번호" />
     </div>
 
     <button class="btn-primary" id="btn-login">로그인하기</button>
+    <p class="error-text error-login" id="login-error"></p>
     <button class="link-underline" id="btn-goto-signup">회원가입</button>
   </section>
 
@@ -65,6 +66,7 @@
       <button class="btn-primary" id="btn-save">저장하기</button>
       <span class="hint-text">enter</span>
     </div>
+    <p class="error-text" id="save-error"></p>
   </section>
 
   <!-- ============ 화면 3. 카테고리 생성 ============ -->
@@ -95,6 +97,7 @@
       <button class="btn-primary" id="btn-create-category">카테고리 만들기</button>
       <span class="hint-text">enter</span>
     </div>
+    <p class="error-text" id="category-error"></p>
   </section>
 
   <!-- ============ 화면 4. 저장완료 ============ -->
@@ -117,6 +120,7 @@
     </div>
   </section>
 
+  <script src="config.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
