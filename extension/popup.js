@@ -149,7 +149,7 @@ document.querySelectorAll('[data-close]').forEach(btn => {
 });
 
 document.getElementById('btn-goto-signup').addEventListener('click', () => {
-  ext.tabs.create({ url: 'https://reweave.app/signup' });
+  ext.tabs.create({ url: `${WEB_BASE_URL}/#/signup` });
 });
 
 document.getElementById('btn-add-category').addEventListener('click', () => {
@@ -162,7 +162,7 @@ document.getElementById('btn-back-to-save').addEventListener('click', () => {
 });
 
 document.getElementById('btn-complete-action').addEventListener('click', () => {
-  ext.tabs.create({ url: 'https://reweave.app/dashboard' });
+  ext.tabs.create({ url: `${WEB_BASE_URL}/#/bookmark` });
 });
 
 // ---------- 로그인 ----------
