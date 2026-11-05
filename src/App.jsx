@@ -13,10 +13,7 @@ import CategoryDetail from './pages/Storage/CategoryDetail.jsx';
 import LinkDetail from './pages/LinkDetail/LinkDetail.jsx';
 import BottomNav from './components/BottomNav/BottomNav.jsx';
 import SaveLinkModal from './components/SaveLinkModal/SaveLinkModal.jsx';
-import StorageAdd from './pages/Storage/StorageAdd.jsx';
-import StorageSearch from './pages/Storage/StorageSearch.jsx';
-import StorageSort from './pages/Storage/StorageSort.jsx';
-import CategoryDetail from './pages/Storage/CategoryDetail.jsx';
+
 
 
 import './App.scss';
