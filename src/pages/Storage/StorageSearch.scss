@@ -55,7 +55,7 @@
                     color: $gray-2;
                 }
 
-                
+
             }
 
             .search-submit-btn {
@@ -106,7 +106,7 @@
                     color: $gray-2;
                     cursor: pointer;
 
-                   
+
                 }
             }
 
@@ -129,10 +129,10 @@
                 }
             }
 
-           
+
         }
 
-      .result-section {
+        .result-section {
             .result-grid {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
@@ -146,7 +146,7 @@
                     .result-thumb {
                         width: 100%;
                         aspect-ratio: 1 / 1;
-                        background-color: #262927; 
+                        background-color: #262927;
                         border-radius: 10px;
                         overflow: hidden;
                         margin-bottom: 8px;
@@ -162,7 +162,7 @@
                             justify-content: center;
 
                             .default-logo-img {
-                                width: 55px; 
+                                width: 55px;
                                 height: 55px;
                             }
                         }
@@ -181,6 +181,26 @@
                         margin: 0;
                     }
                 }
+            }
+        }
+    }
+
+    @media (max-width: 768px) {
+        width: 100%;
+        min-width: 0;
+        height: 100dvh;
+        padding-top: 20px;
+
+        .search-header {
+            padding: 16px 20px;
+        }
+
+        .search-main {
+            padding: 22px 20px;
+
+            .result-section .result-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
             }
         }
     }

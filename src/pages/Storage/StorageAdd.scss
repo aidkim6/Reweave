@@ -179,16 +179,36 @@
                     background-color: $black-2;
                     color: $gray-3;
                     border: 1px solid #52575380;
-                   
+
                 }
 
                 .cancel-btn {
                     background-color: #ffffff;
                     color: #1D1F1E;
 
-                    
+
                 }
             }
+        }
+    }
+
+    @media (max-width: 768px) {
+        width: 100%;
+        min-width: 0;
+        padding-top: 20px;
+
+        .add-header {
+            padding: 15px 20px;
+            margin-bottom: 12px;
+        }
+
+        .storage-add {
+            padding: 0 20px;
+        }
+
+        .exit-modal-overlay .exit-modal-card {
+            width: 285px;
+            max-width: calc(100vw - 32px);
         }
     }
 }

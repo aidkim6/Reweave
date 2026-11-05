@@ -50,10 +50,7 @@ function App() {
           <Route path="/link/:id" element={<LinkDetail />} />
           <Route path="/project" element={<Project />} />
           <Route path="/mypage" element={<Mypage />} />
-          <Route path='/storage/add' element={<StorageAdd />} />
-          <Route path='/storage/sort' element={<StorageSort />} />
-          <Route path='/storage/search' element={<StorageSearch />} />
-          <Route path="/storage/detail/:id" element={<CategoryDetail />} />
+          
         </Routes>
       </main>
 
