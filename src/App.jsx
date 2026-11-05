@@ -5,12 +5,14 @@ import Signup from './pages/Signup/Signup.jsx';
 import Home from './pages/Home/Home.jsx';
 import Project from './pages/Project/Project.jsx'; // 새로 만든 Project 페이지 연결
 import Mypage from './pages/Mypage/myPage.jsx';
+import Storage from './pages/Storage/Storage.jsx';
+import StorageAdd from './pages/Storage/StorageAdd.jsx';
+import StorageSort from './pages/Storage/StorageSort.jsx';
+import StorageSearch from './pages/Storage/StorageSearch.jsx';
+import CategoryDetail from './pages/Storage/CategoryDetail.jsx';
 import BottomNav from './components/BottomNav/BottomNav.jsx';
 import SaveLinkModal from './components/SaveLinkModal/SaveLinkModal.jsx';
 import './App.scss';
-
-// 임시 페이지 (보관함)
-const Bookmark = () => <div className="page">보관함</div>;
 
 function App() {
   const location = useLocation();
@@ -32,7 +34,11 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/bookmark" element={<Bookmark />} />
+          <Route path="/bookmark" element={<Storage />} />
+          <Route path="/storage/add" element={<StorageAdd />} />
+          <Route path="/storage/sort" element={<StorageSort />} />
+          <Route path="/storage/search" element={<StorageSearch />} />
+          <Route path="/storage/detail/:id" element={<CategoryDetail />} />
           <Route path="/project" element={<Project />} />
           <Route path="/mypage" element={<Mypage />} />
         </Routes>
