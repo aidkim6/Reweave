@@ -184,7 +184,7 @@ $thumb-bg: #262927;
                 grid-column: 1 / 3;
             }
 
-          
+
         }
 
         // 이름 / 개수 / 더보기
@@ -296,4 +296,38 @@ $thumb-bg: #262927;
             }
         }
     }
+    @media (max-width: 768px) {
+        width: 100%;
+        min-width: 0;
+        padding: 20px 0 120px;
+        align-items: stretch;
+
+        .storage-title {
+            width: 100%;
+            padding: 14px 20px;
+            margin-bottom: 12px;
+        }
+
+        .storage-sub {
+            width: calc(100% - 40px);
+            margin: 0 20px;
+        }
+
+        .category-main {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px 12px;
+            width: calc(100% - 40px);
+            margin: 20px 20px 0;
+        }
+
+        .category-item {
+            .thumb {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1 / 1;
+            }
+        }
+    }
 }
+
+    
