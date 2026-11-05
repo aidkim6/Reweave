@@ -150,7 +150,11 @@ function CategoryDetail() {
                             <div
                                 className={`detail-card ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
                                 key={item.id}
-                                onClick={() => handleSelectItem(item.id)}
+                                style={{ cursor: 'pointer' }}
+                                // 선택 모드에서는 선택, 아니면 링크 상세로 이동
+                                onClick={() =>
+                                    isSelectMode ? handleSelectItem(item.id) : navigate(`/link/${item.id}`)
+                                }
                             >
                                 <div className="card-thumb">
                                     {item.thumb ? (
