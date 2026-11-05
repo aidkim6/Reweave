@@ -1,0 +1,451 @@
+@import '../../styles/mixins';
+
+// 링크 상세 (보관함 > 카테고리 > 링크). Figma 모바일 프레임(390px) 기준.
+// 프레임에 있는 상태바(47px)는 기기 UI라서 제외하고 위치를 맞췄어요.
+.link-detail {
+  position: relative;
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding-bottom: 40px;
+  box-sizing: border-box;
+  background-color: #1a1c1b;
+  color: $color-white;
+  font-family: $font-family;
+
+  button {
+    font-family: inherit;
+    color: inherit;
+  }
+
+  .icon-btn {
+    display: flex;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+
+    img {
+      display: block;
+    }
+  }
+
+  // ---------- 상단 ----------
+  .link-detail-header {
+    @include flex-between;
+    align-items: flex-start;
+    height: 60px;
+    padding: 16px 24px 0;
+    box-sizing: border-box;
+  }
+
+  // ---------- 토스트 ----------
+  .link-toast {
+    @include flex-between;
+    position: absolute;
+    top: 7px;
+    left: 24px;
+    right: 24px;
+    z-index: $z-header;
+    padding: 11px 15px;
+    border-radius: 8px;
+    background-color: $black-2;
+
+    .link-toast-message {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      @include font-style($font-14, $weight-medium);
+      letter-spacing: -0.28px;
+
+      img {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .link-toast-action {
+      padding: 0;
+      border: 0;
+      background: none;
+      cursor: pointer;
+      @include font-style($font-14, $weight-medium);
+      letter-spacing: -0.28px;
+      text-decoration: underline;
+      color: $gray-2;
+    }
+  }
+
+  // ---------- 더보기 메뉴 ----------
+  .link-menu {
+    position: absolute;
+    top: 44px;
+    right: 21px;
+    z-index: $z-dropdown + 10;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    border: 1px solid rgba(43, 45, 43, 0.5);
+    border-radius: 10px;
+    background-color: $black-2;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+
+    .link-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      width: 98px;
+      padding: 5px;
+      border: 0;
+      background: none;
+      cursor: pointer;
+      @include font-style($font-12, $weight-medium);
+      letter-spacing: -0.24px;
+      white-space: nowrap;
+
+      &.danger {
+        color: $red-point;
+      }
+    }
+
+    .link-menu-icon {
+      position: relative;
+      flex: none;
+      width: 18px;
+      height: 18px;
+
+      img {
+        display: block;
+        width: 18px;
+        height: 18px;
+      }
+
+      // 공유 아이콘은 18px 칸 안에서 13.5 x 15 크기로 가운데 정렬
+      .share-icon {
+        position: absolute;
+        top: 1.5px;
+        left: 2.25px;
+        width: 13.5px;
+        height: 15px;
+      }
+    }
+  }
+
+  // ---------- 미리보기 ----------
+  .link-preview {
+    width: 276px;
+    height: 296px;
+    margin: 24px auto 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #262927;
+
+    .link-preview-thumb {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .link-preview-placeholder {
+      @include flex-center;
+      width: 100%;
+      height: 100%;
+
+      img {
+        display: block;
+        width: 43.4px;
+        height: 54.6px;
+      }
+    }
+  }
+
+  // ---------- 제목 영역 ----------
+  .link-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 22px 24px 0;
+
+    .link-category-chip {
+      align-self: flex-start;
+      padding: 5px 12px;
+      border: 1px solid rgba(82, 87, 83, 0.5);
+      border-radius: 100px;
+      @include font-style($font-16, $weight-medium);
+      letter-spacing: -0.32px;
+    }
+
+    .link-title {
+      margin: 0;
+      @include font-style($font-20, $weight-medium);
+      letter-spacing: -0.4px;
+      word-break: break-word;
+    }
+
+    .link-meta {
+      display: flex;
+      gap: 15px;
+
+      .link-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+        @include font-style($font-14, $weight-regular, normal);
+        color: $gray-2;
+
+        img {
+          flex: none;
+          width: 20px;
+          height: 20px;
+        }
+
+        a {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: inherit;
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
+  // ---------- 요약 / 메모 ----------
+  .link-boxes {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 37px 24px 0;
+
+    .link-box {
+      padding: 16px;
+      border: 1px solid #2f332f;
+      border-radius: 10px;
+      background-color: $black-2;
+
+      h2 {
+        margin: 0 0 7px; // 시안 실측 높이(요약 168px, 메모 105px)에 맞춤
+        @include font-style($font-16, $weight-semibold);
+        letter-spacing: -0.32px;
+      }
+
+      p {
+        margin: 0;
+        @include font-style($font-14, $weight-regular);
+        letter-spacing: -0.28px;
+        color: #cdd3cd;
+        word-break: break-word;
+      }
+
+      .link-memo {
+        white-space: pre-line;
+      }
+    }
+  }
+
+  // ---------- 저장된 프로젝트 ----------
+  .link-projects {
+    margin: 37px 24px 0; // 시안 실측: 메모 박스 아래 81px 지점에 첫 카드
+
+    h2 {
+      margin: 0 0 15px;
+      @include font-style($font-18, $weight-semibold);
+      letter-spacing: -0.36px;
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .link-project-card {
+      @include flex-between;
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #2f332f;
+      border-radius: 10px;
+      background-color: $black-2;
+      text-align: left;
+      cursor: pointer;
+
+      img {
+        flex: none;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .link-project-body {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .link-project-badge {
+      align-self: flex-start;
+      margin-bottom: 8px; // 배지와 제목 사이 간격 10px (gap 2px + 8px)
+      padding: 3px 7px;
+      border: 1px solid $primary-150;
+      border-radius: 4px;
+      background-color: $primary-250;
+      @include font-style($font-12, $weight-medium);
+      letter-spacing: -0.24px;
+
+      &.done {
+        border-color: $gray-1;
+        background-color: rgba(82, 87, 83, 0.5);
+      }
+    }
+
+    .link-project-title {
+      @include font-style($font-16, $weight-medium);
+      letter-spacing: -0.32px;
+    }
+
+    .link-project-tags {
+      @include font-style(13px, $weight-regular);
+      letter-spacing: -0.26px;
+      color: $gray-2;
+    }
+  }
+
+  // ---------- 팝업 공통 ----------
+  .link-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: $z-modal;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    background-color: rgba(18, 18, 18, 0.68); // 시안: rgba(18,18,18,0.85) + 투명도 80%
+
+    &.center {
+      align-items: center;
+    }
+  }
+
+  // ---------- 링크 이동 (하단 시트) ----------
+  .link-sheet {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 390px;
+    padding: 27px 24px 34px;
+    box-sizing: border-box;
+    border-radius: 20px 20px 0 0;
+    background-color: $gray-800;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+
+    .link-sheet-title {
+      margin: 0;
+      text-align: center;
+      @include font-style($font-18, $weight-semibold);
+      letter-spacing: -0.36px;
+    }
+
+    .link-sheet-head {
+      @include flex-between;
+      margin-top: 21px;
+      @include font-style($font-18, $weight-semibold);
+      letter-spacing: -0.36px;
+    }
+
+    .link-sheet-list {
+      max-height: 235px; // 행 5개 높이. 더 많으면 스크롤
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+      overflow-y: auto;
+    }
+
+    .link-sheet-row {
+      @include flex-between;
+      width: 100%;
+      height: 47px;
+      padding: 12px 0;
+      box-sizing: border-box;
+      border: 0;
+      border-bottom: 1px solid $black-2;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      @include font-style($font-16, $weight-regular);
+      letter-spacing: -0.32px;
+
+      img {
+        width: 22px;
+        height: 22px;
+      }
+    }
+
+    .link-sheet-submit {
+      width: 100%;
+      margin-top: 40px;
+      padding: 19px 0;
+      border: 0;
+      border-radius: 10px;
+      background-color: $primary-900;
+      cursor: pointer;
+      @include font-style($font-20, $weight-semibold);
+      letter-spacing: -0.4px;
+      color: $gray-800;
+    }
+  }
+
+  // ---------- 삭제 확인 ----------
+  .link-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    width: 285px;
+    padding: 25px 23px;
+    box-sizing: border-box;
+    border-radius: 15px;
+    background-color: $black-2;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
+
+    p {
+      margin: 0;
+      @include font-style($font-16, $weight-regular);
+      letter-spacing: -0.32px;
+
+      strong {
+        font-weight: $weight-semibold;
+      }
+    }
+
+    .link-dialog-buttons {
+      display: flex;
+      gap: 6px;
+
+      button {
+        width: 116px;
+        height: 42px;
+        border-radius: 100px;
+        cursor: pointer;
+        @include font-style($font-16, $weight-semibold);
+      }
+
+      .cancel {
+        border: 1px solid rgba(82, 87, 83, 0.5);
+        background: none;
+        color: $gray-3;
+      }
+
+      .confirm {
+        border: 0;
+        background-color: $color-white;
+        color: $gray-800;
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@ import StorageAdd from './pages/Storage/StorageAdd.jsx';
 import StorageSort from './pages/Storage/StorageSort.jsx';
 import StorageSearch from './pages/Storage/StorageSearch.jsx';
 import CategoryDetail from './pages/Storage/CategoryDetail.jsx';
+import LinkDetail from './pages/LinkDetail/LinkDetail.jsx';
 import BottomNav from './components/BottomNav/BottomNav.jsx';
 import SaveLinkModal from './components/SaveLinkModal/SaveLinkModal.jsx';
 import './App.scss';
@@ -19,7 +20,9 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const hideBottomNavPaths = ['/login', '/signup'];
-  const showBottomNav = !hideBottomNavPaths.includes(location.pathname);
+  // 링크 상세 화면(/link/:id)은 디자인에 하단 메뉴바가 없어요
+  const showBottomNav =
+    !hideBottomNavPaths.includes(location.pathname) && !location.pathname.startsWith('/link/');
 
   const handleSaveLink = (linkData) => {
     console.log('저장된 링크 데이터:', linkData);
@@ -39,6 +42,7 @@ function App() {
           <Route path="/storage/sort" element={<StorageSort />} />
           <Route path="/storage/search" element={<StorageSearch />} />
           <Route path="/storage/detail/:id" element={<CategoryDetail />} />
+          <Route path="/link/:id" element={<LinkDetail />} />
           <Route path="/project" element={<Project />} />
           <Route path="/mypage" element={<Mypage />} />
         </Routes>
