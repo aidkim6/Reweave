@@ -13,6 +13,7 @@ import menuMoveIcon from '../../assets/link-detail/menu-move.svg';
 import menuDeleteIcon from '../../assets/link-detail/menu-delete.svg';
 import checkCircleIcon from '../../assets/link-detail/check-circle.svg';
 import plusIcon from '../../assets/link-detail/plus.svg';
+import closeIcon from '../../assets/link-detail/close.svg';
 import toastCheckIcon from '../../assets/link-detail/toast-check.svg';
 
 // TODO: 백엔드 연결 시 GET /api/bookmarks/{id} 응답으로 교체
@@ -31,6 +32,7 @@ const SAMPLE_LINK = {
 
 // TODO: 백엔드 연결 시 GET /api/categories 응답으로 교체
 const SAMPLE_CATEGORIES = [
+  { id: 0, name: '미분류' },
   { id: 1, name: '디자인' },
   { id: 2, name: '취업' },
   { id: 3, name: '여행' },
@@ -89,7 +91,7 @@ const LinkDetail = () => {
   const openMoveModal = () => {
     setMenuOpen(false);
     const current = SAMPLE_CATEGORIES.find((c) => c.name === link.categoryName);
-    setTargetCategoryId(current ? current.id : null);
+    setTargetCategoryId(current ? current.id : 0);
     setModal('move');
   };
 
@@ -110,6 +112,16 @@ const LinkDetail = () => {
         navigate(`/storage/detail/${target.id}`, { state: { categoryName: target.name } }),
     });
   };
+
+  // 이동 창에서 Enter 를 누르면 이동하기 (웹 시안의 'enter' 안내). 버튼에 포커스가 있을 땐 그 버튼의 동작을 따라요.
+  useEffect(() => {
+    if (modal !== 'move') return undefined;
+    const handleEnter = (e) => {
+      if (e.key === 'Enter' && document.activeElement?.tagName !== 'BUTTON') handleMove();
+    };
+    document.addEventListener('keydown', handleEnter);
+    return () => document.removeEventListener('keydown', handleEnter);
+  });
 
   const handleDelete = () => {
     // TODO: DELETE /api/bookmarks/{id}
@@ -235,6 +247,14 @@ const LinkDetail = () => {
       {modal === 'move' && (
         <div className="link-overlay" onClick={() => setModal(null)}>
           <div className="link-sheet" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="icon-btn link-sheet-close"
+              onClick={() => setModal(null)}
+              aria-label="닫기"
+            >
+              <img src={closeIcon} alt="" />
+            </button>
             <h2 className="link-sheet-title">링크 이동</h2>
             <div className="link-sheet-head">
               <span>카테고리</span>
@@ -264,6 +284,7 @@ const LinkDetail = () => {
             <button type="button" className="link-sheet-submit" onClick={handleMove}>
               이동하기
             </button>
+            <span className="link-sheet-hint">enter</span>
           </div>
         </div>
       )}

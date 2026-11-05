@@ -1,5 +1,10 @@
 @import '../../styles/mixins';
 
+// 이 화면이 열려 있을 땐 양옆 여백도 시안 배경색(#1a1c1b)으로
+.App:has(.link-detail) {
+  background-color: #1a1c1b;
+}
+
 // 링크 상세 (보관함 > 카테고리 > 링크). Figma 모바일 프레임(390px) 기준.
 // 프레임에 있는 상태바(47px)는 기기 UI라서 제외하고 위치를 맞췄어요.
 .link-detail {
@@ -360,11 +365,13 @@
     }
 
     .link-sheet-list {
-      max-height: 235px; // 행 5개 높이. 더 많으면 스크롤
+      max-height: 282px; // 행 6개 높이(미분류 포함). 더 많으면 스크롤
       margin: 10px 0 0;
       padding: 0;
       list-style: none;
       overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: $gray-1 transparent;
     }
 
     .link-sheet-row {
@@ -445,6 +452,120 @@
         border: 0;
         background-color: $color-white;
         color: $gray-800;
+      }
+    }
+  }
+
+  // ---------- 웹 전용 요소 (모바일에서는 숨김) ----------
+  .link-sheet-close,
+  .link-sheet-hint {
+    display: none;
+  }
+
+  // ==========================================================
+  // 웹(데스크톱) 레이아웃: Figma `보관함 ( 카테고리 )_web` 프레임 기준.
+  // 768px 이상에서 가운데 720px 영역(768px - 좌우 24px)으로 보여요.
+  // ==========================================================
+  @media (min-width: 768px) {
+    max-width: 768px;
+    padding-top: 41px;
+
+    .link-toast {
+      position: fixed;
+      top: auto;
+      bottom: 41px;
+      left: 50%;
+      right: auto;
+      width: 488px;
+      box-sizing: border-box;
+      transform: translateX(-50%);
+    }
+
+    .link-menu {
+      top: 85px;
+      right: 25px;
+    }
+
+    .link-preview {
+      width: calc(100% - 48px);
+      height: auto;
+      aspect-ratio: 16 / 9; // 720 x 405
+      margin: 22px 24px 0;
+    }
+
+    .link-info {
+      margin-top: 58px;
+
+      .link-title {
+        max-width: 342px; // 시안에서 제목이 342px 폭으로 줄바꿈돼요
+      }
+    }
+
+    .link-projects {
+      margin-top: 35px;
+
+      ul {
+        flex-direction: row;
+        gap: 20px;
+      }
+
+      li {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+    }
+
+    .link-overlay {
+      align-items: center;
+      background-color: rgba(18, 18, 18, 0.85);
+    }
+
+    // 링크 이동: 하단 시트 -> 가운데 팝업
+    .link-sheet {
+      position: relative;
+      width: 408px;
+      max-width: calc(100% - 32px);
+      height: 560px;
+      padding: 22px 23px 22px;
+      border: 1px solid rgba(82, 87, 83, 0.5);
+      border-radius: 10px;
+
+      .link-sheet-title {
+        @include font-style($font-20, $weight-semibold);
+        letter-spacing: -0.4px;
+      }
+
+      .link-sheet-close {
+        display: flex;
+        position: absolute;
+        top: 25px;
+        right: 23px;
+      }
+
+      .link-sheet-head {
+        margin-top: 22px;
+      }
+
+      .link-sheet-list {
+        flex: 1;
+        max-height: none;
+      }
+
+      .link-sheet-submit {
+        margin-top: 16px;
+        padding: 0;
+        height: 52px;
+        @include font-style($font-16, $weight-semibold);
+        letter-spacing: -0.32px;
+      }
+
+      .link-sheet-hint {
+        display: block;
+        margin-top: 3px;
+        text-align: center;
+        font-size: $font-14;
+        line-height: normal;
+        color: #8e8e8e;
       }
     }
   }
