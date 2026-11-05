@@ -5,6 +5,10 @@ import searchIcon from '../../assets/storage/search.svg';
 import moreIcon from '../../assets/storage/moreH.svg';
 import select from '../../assets/storage/select.svg';
 import down from '../../assets/storage/down.svg';
+import defaulticon from '../../assets/icon.svg';
+import check from '../../assets/storage/check-mark.svg';
+import plus from '../../assets/plus.svg';
+import check1 from '../../assets/storage/check.svg';
 import './CategoryDetail.scss';
 
 function CategoryDetail() {
@@ -19,13 +23,12 @@ function CategoryDetail() {
         { id: 2, title: 'Rhythm 포스터 그래픽', thumb: '' },
         { id: 3, title: 'Matcha Café 브랜딩 프로젝트', thumb: '' },
         { id: 4, title: '삐삐 | 하루 한 번, 가족에게 보내는 생존신고 서비스 Family Widget Service', thumb: '' },
-        { id: 5, title: '60px를 넘으면 말줄임표 처리하기...', thumb: '' },
+        { id: 5, title: '60px를 넘으면 말줄임표 처리하기60px를 넘으면 말줄임표 처리하기60px를 넘으면 말줄임표 처리하기', thumb: '' },
     ]);
 
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [activeModal, setActiveModal] = useState(null);
-    const [targetCategory, setTargetCategory] = useState('미분류');
 
     const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
     const [sortType, setSortType] = useState('최신순');
@@ -49,13 +52,22 @@ function CategoryDetail() {
         setActiveModal(null);
     };
 
+    const categories = [
+        { id: 0, name: '미분류' },
+        { id: 1, name: '카테고리 제목' },
+        { id: 2, name: '카테고리 제목' },
+        { id: 3, name: '카테고리 제목' },
+        { id: 4, name: '카테고리 제목' },
+    ];
+    const [targetCategory, setTargetCategory] = useState(categories[0]);
+
+    // 이동 핸들러
     const handleMoveItems = () => {
-        alert(`선택한 항목이 '${targetCategory}' (으)로 이동되었습니다.`);
+        alert(`선택한 항목이 '${targetCategory.name}' (으)로 이동되었습니다.`);
         setSelectedIds([]);
         setIsSelectMode(false);
         setActiveModal(null);
     };
-
     return (
         <div className="category-detail-wrap">
             {/* 고정 헤더 */}
@@ -84,8 +96,8 @@ function CategoryDetail() {
                     {!isSelectMode ? (
                         <div className="normal-bar">
                             <div className="sort-dropdown-wrap" onClick={(e) => e.stopPropagation()}>
-                                <button 
-                                    className="sort-toggle-btn" 
+                                <button
+                                    className="sort-toggle-btn"
                                     type="button"
                                     onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                                 >
@@ -149,12 +161,12 @@ function CategoryDetail() {
                                         <img src={item.thumb} alt="" />
                                     ) : (
                                         <div className="default-thumb-box">
-                                            <div className="bookmark-icon" />
+                                            <img src={defaulticon} alt="" />
                                         </div>
                                     )}
                                     {isSelectMode && (
                                         <div className={`checkbox-circle ${isSelected ? 'checked' : ''}`}>
-                                            {isSelected && <span className="check-mark">✓</span>}
+                                            {isSelected && <span className="check-mark"><img src={check} alt="" /></span>}
                                         </div>
                                     )}
                                 </div>
@@ -167,7 +179,7 @@ function CategoryDetail() {
 
             {/* 모달 영역 (이동 / 삭제) */}
             {activeModal === 'move' && (
-                <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+                <div className="modal-overlay-detail" onClick={() => setActiveModal(null)}>
                     <div className="modal-content move-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-top-bar">
                             <h2>링크 이동</h2>
@@ -175,23 +187,28 @@ function CategoryDetail() {
                         </div>
                         <div className="modal-section-title">
                             <span>카테고리</span>
-                            <button className="add-category-btn" type="button">+</button>
+                            <button className="add-category-btn" type="button"><img src={plus} alt="" /></button>
                         </div>
                         <div className="category-scroll-list">
-                            {['미분류', '카테고리 제목', '카테고리 제목'].map((cat, idx) => (
+                            {categories.map((cat) => (
                                 <div
-                                    className={`category-select-item ${targetCategory === cat ? 'selected' : ''}`}
-                                    key={idx}
+                                    className="category-select-item"
+                                    key={cat.id}
                                     onClick={() => setTargetCategory(cat)}
                                 >
-                                    <span>{cat}</span>
-                                    {targetCategory === cat && <span className="radio-check">✓</span>}
+                                    <span>{cat.name}</span>
+                                    {targetCategory.id === cat.id && (
+                                        <span className="radio-check">
+                                            <img src={check1} alt="" />
+                                        </span>
+                                    )}
                                 </div>
                             ))}
                         </div>
                         <button className="submit-action-btn" onClick={handleMoveItems} type="button">
                             이동하기
                         </button>
+                        <p className='enter' type='button'>enter</p>
                     </div>
                 </div>
             )}
@@ -200,7 +217,7 @@ function CategoryDetail() {
                 <div className="modal-overlay" onClick={() => setActiveModal(null)}>
                     <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
                         <p className="delete-msg">
-                            정말로 선택한 링크를<br />삭제하시겠습니까?
+                            정말로 <strong>선택한 링크를</strong><br />삭제하시겠습니까?
                         </p>
                         <div className="delete-modal-btns">
                             <button className="modal-btn cancel" onClick={() => setActiveModal(null)} type="button">

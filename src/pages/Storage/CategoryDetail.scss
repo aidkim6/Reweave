@@ -83,7 +83,7 @@
             .normal-bar {
                 display: flex;
                 justify-content: space-between;
-                align-items: flex-end; 
+                align-items: flex-end;
                 width: 100%;
 
                 .sort-dropdown-wrap {
@@ -101,7 +101,7 @@
                         align-items: center;
                         gap: 5px;
 
-                        img{
+                        img {
                             width: 18px;
                             height: 18px;
                         }
@@ -128,7 +128,7 @@
                             color: #FFFFFF;
                             cursor: pointer;
 
-                           
+
                         }
                     }
                 }
@@ -161,9 +161,9 @@
                         font-size: 12px;
                         font-weight: 500;
 
-                      
 
-                  
+
+
                     }
                 }
             }
@@ -224,11 +224,11 @@
                 .card-thumb {
                     width: 100%;
                     aspect-ratio: 1 / 1;
-                    background-color: #1e1e1e;
-                    border-radius: 12px;
+                    background-color: #262927;
+                    border-radius: 10px;
                     overflow: hidden;
                     position: relative;
-                    margin-bottom: 8px;
+                    margin-bottom: 5px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -242,11 +242,9 @@
                         width: 100%;
                         height: 100%;
 
-                        .bookmark-icon {
-                            width: 24px;
-                            height: 30px;
-                            background: #4a4a4a;
-                            clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+                        img {
+                            width: 77px;
+                            height: 77px;
                         }
                     }
 
@@ -264,39 +262,45 @@
                         justify-content: center;
 
                         &.checked {
-                            background-color: #00ff66;
-                            border-color: #00ff66;
+                            background-color: $primary-900;
+                            border: none;
 
                             .check-mark {
-                                color: #121212;
-                                font-size: 12px;
-                                font-weight: bold;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+
+                                img {
+                                    width: 11.29px;
+                                    height: auto;
+                                }
+
                             }
                         }
                     }
                 }
 
                 &.selected .card-thumb {
-                    border-color: #00ff66;
+                    border: 0.67px solid $primary-900;
                 }
 
                 .card-title {
                     font-size: 13px;
-                    color: #d1d1d1;
+                    color: #FFFFFF;
                     margin: 0;
-                    line-height: 1.4;
+                    line-height: 150%;
+                    letter-spacing: -2%;
                     display: -webkit-box;
-                    -webkit-line-clamp: 2;
+                    -webkit-line-clamp: 3;
                     -webkit-box-orient: vertical;
-                    overflow: hidden;
                     text-overflow: ellipsis;
+                    overflow: hidden;
                 }
             }
         }
     }
 
-    /* 모달 스타일은 기존 유지 */
-    .modal-overlay {
+    .modal-overlay-detail {
         position: fixed;
         inset: 0;
         background-color: rgba(0, 0, 0, 0.6);
@@ -305,36 +309,39 @@
         justify-content: center;
         z-index: 1000;
 
-        .modal-content {
-            background-color: #242424;
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            box-sizing: border-box;
-        }
-
         .move-modal {
-            width: 360px;
+            width: 408px;
+            height: 560px;
             padding: 24px;
             display: flex;
             flex-direction: column;
 
             .modal-top-bar {
                 display: flex;
-                justify-content: space-between;
                 align-items: center;
-                margin-bottom: 20px;
+                justify-content: space-between;
+                margin-bottom: 22px;
+                position: relative;
 
                 h2 {
-                    font-size: 16px;
+                    position: absolute;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    font-size: 18px;
                     font-weight: 600;
                     margin: 0;
+                    text-align: center;
+                    white-space: nowrap;
                 }
 
                 .close-btn {
+                    margin-left: auto;
                     background: none;
                     border: none;
-                    color: #8e8e8e;
-                    font-size: 20px;
+                    color: #ffffff;
+                    font-size: 28px;
+                    line-height: 1;
+                    padding: 0;
                     cursor: pointer;
                 }
             }
@@ -343,107 +350,135 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                font-size: 14px;
-                color: #8e8e8e;
-                margin-bottom: 12px;
+                font-size: 16px;
+                font-weight: 600;
+                color: #ffffff;
+                margin-bottom: 4px;
 
                 .add-category-btn {
                     background: none;
                     border: none;
-                    color: #ffffff;
-                    font-size: 16px;
+                    padding: 0;
                     cursor: pointer;
+                    display: flex;
+
+                    img {
+                        width: 24px;
+                        height: 24px;
+                    }
                 }
             }
 
             .category-scroll-list {
-                max-height: 200px;
+                flex: 1;
+                min-height: 0;
                 overflow-y: auto;
                 display: flex;
                 flex-direction: column;
-                gap: 4px;
                 margin-bottom: 24px;
 
                 .category-select-item {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 12px;
-                    border-radius: 8px;
+                    padding: 12px 0;
+                    border-bottom: 1px solid $black-2;
                     cursor: pointer;
                     font-size: 14px;
-
-                    &:hover {
-                        background-color: #2e2e2e;
-                    }
-
-                    &.selected {
-                        background-color: #2e2e2e;
-                        color: #00ff66;
-                    }
+                    color: #ffffff;
+                    flex-shrink: 0;
 
                     .radio-check {
-                        color: #00ff66;
-                        font-weight: bold;
+                        width: 22px;
+                        height: 22px;
+                        border-radius: 50%;
+                        background-color: $primary-900;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+
+                        img {
+                            width: 11.29px;
+                            height: auto;
+                        }
                     }
                 }
             }
 
             .submit-action-btn {
                 width: 100%;
-                height: 44px;
-                background-color: #00ff66;
+                height: 50px;
+                background-color: $primary-900;
                 color: #121212;
                 border: none;
-                border-radius: 8px;
+                border-radius: 10px;
                 font-size: 15px;
                 font-weight: 600;
                 cursor: pointer;
 
-                &:hover {
-                    opacity: 0.9;
-                }
+                
+            }
+
+
+            .enter {
+                color: #8E8E8E;
+                width: 100%;
+                margin: 8px 0 0;
+                text-align: center;
+                font-size: 14px;
+                font-weight: 400;
+                cursor: pointer;
+            }
+
+        }
+    }
+
+    .delete-modal {
+        width: 285px;
+        height: 176px;
+        padding: 25px 23px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+        background-color: #2d2f2d;
+        border: none;
+        border-radius: 16px;
+
+        .delete-msg {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #ffffff;
+            margin: 0 0 40px;
+
+            strong {
+                font-weight: 700;
             }
         }
 
-        .delete-modal {
-            width: 320px;
-            padding: 32px 24px 24px;
+        .delete-modal-btns {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
+            gap: 8px;
+            width: 100%;
 
-            .delete-msg {
+            .modal-btn {
+                flex: 1;
+                height: 44px;
+                border-radius: 100px;
                 font-size: 15px;
-                line-height: 1.5;
-                color: #ffffff;
-                margin-bottom: 28px;
-            }
+                font-weight: 600;
+                cursor: pointer;
 
-            .delete-modal-btns {
-                display: flex;
-                gap: 12px;
-                width: 100%;
+                &.cancel {
+                    background-color: transparent;
+                    border: 1px solid #4a4d4a;
+                    color: #9a9d9a;
+                }
 
-                .modal-btn {
-                    flex: 1;
-                    height: 44px;
-                    border-radius: 8px;
-                    font-size: 15px;
-                    font-weight: 500;
-                    cursor: pointer;
+                &.confirm {
+                    background-color: #ffffff;
                     border: none;
-
-                    &.cancel {
-                        background-color: #333333;
-                        color: #ffffff;
-                    }
-
-                    &.confirm {
-                        background-color: #ffffff;
-                        color: #121212;
-                    }
+                    color: #121212;
                 }
             }
         }

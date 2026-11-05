@@ -13,7 +13,15 @@ import CategoryDetail from './pages/Storage/CategoryDetail.jsx';
 import LinkDetail from './pages/LinkDetail/LinkDetail.jsx';
 import BottomNav from './components/BottomNav/BottomNav.jsx';
 import SaveLinkModal from './components/SaveLinkModal/SaveLinkModal.jsx';
+import StorageAdd from './pages/Storage/StorageAdd.jsx';
+import StorageSearch from './pages/Storage/StorageSearch.jsx';
+import StorageSort from './pages/Storage/StorageSort.jsx';
+import CategoryDetail from './pages/Storage/CategoryDetail.jsx';
+
+
 import './App.scss';
+
+
 
 function App() {
   const location = useLocation();
@@ -45,6 +53,10 @@ function App() {
           <Route path="/link/:id" element={<LinkDetail />} />
           <Route path="/project" element={<Project />} />
           <Route path="/mypage" element={<Mypage />} />
+          <Route path='/storage/add' element={<StorageAdd />} />
+          <Route path='/storage/sort' element={<StorageSort />} />
+          <Route path='/storage/search' element={<StorageSearch />} />
+          <Route path="/storage/detail/:id" element={<CategoryDetail />} />
         </Routes>
       </main>
 
