@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Home.scss';
 
 
@@ -10,6 +11,8 @@ import rightArrowIcon from '../../assets/home/right.svg';
 
 const Home = ({ nickname = '수정' }) => {
   const sliderRef = useRef(null);
+  const navigate = useNavigate();
+  const openLink = (id) => navigate(`/link/${id}`); // 링크 상세로 이동
 
   const todayLinks = [
     {
@@ -123,7 +126,12 @@ const Home = ({ nickname = '수정' }) => {
 
             <div className="card-slider" ref={sliderRef}>
               {todayLinks.map((item) => (
-                <div key={item.id} className="today-card">
+                <div
+                  key={item.id}
+                  className="today-card"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => openLink(item.id)}
+                >
                   <div className="card-info">
                     <h4>{item.title}</h4>
                     <span className="card-tag">{item.tag}</span>
@@ -173,7 +181,12 @@ const Home = ({ nickname = '수정' }) => {
           </div>
           <div className="recent-list">
             {recentLinks.map((item) => (
-              <div key={item.id} className="recent-card">
+              <div
+                key={item.id}
+                className="recent-card"
+                style={{ cursor: 'pointer' }}
+                onClick={() => openLink(item.id)}
+              >
                 <div className="recent-thumb">
                   <img
                     src={item.imageUrl || defaultIcon}
