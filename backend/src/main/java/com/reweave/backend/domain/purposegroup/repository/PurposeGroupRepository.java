@@ -1,6 +1,7 @@
 package com.reweave.backend.domain.purposegroup.repository;
 
 import com.reweave.backend.domain.purposegroup.entity.PurposeGroup;
+import com.reweave.backend.domain.purposegroup.entity.PurposeGroupStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,4 +14,6 @@ public interface PurposeGroupRepository extends JpaRepository<PurposeGroup, Long
     Optional<PurposeGroup> findByIdAndUserId(Long id, Long userId);
 
     boolean existsByIdAndUserId(Long id, Long userId);
+
+    List<PurposeGroup> findByUserIdAndStatusOrderByCreatedDateDesc(Long userId, PurposeGroupStatus status);
 }

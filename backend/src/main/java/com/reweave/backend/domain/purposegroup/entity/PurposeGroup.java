@@ -25,6 +25,10 @@ public class PurposeGroup extends BaseTimeEntity {
     @Column(name = "status", nullable = false, length = 20)
     private PurposeGroupStatus status;
 
+    // AI가 미리 생성해 둔 홈 화면 리콜 카드용 추천문구 (없으면 null)
+    @Column(name = "recall_headline", length = 100)
+    private String recallHeadline;
+
     protected PurposeGroup() {
     }
 
@@ -50,6 +54,10 @@ public class PurposeGroup extends BaseTimeEntity {
         }
     }
 
+    public void updateRecallHeadline(String recallHeadline) {
+        this.recallHeadline = recallHeadline;
+    }
+
     public Long getId() {
         return id;
     }
@@ -68,5 +76,9 @@ public class PurposeGroup extends BaseTimeEntity {
 
     public PurposeGroupStatus getStatus() {
         return status;
+    }
+
+    public String getRecallHeadline() {
+        return recallHeadline;
     }
 }

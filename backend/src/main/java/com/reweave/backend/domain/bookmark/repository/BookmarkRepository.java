@@ -137,4 +137,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
             Collection<Long> categoryIds,
             Pageable pageable
     );
+
+    List<Bookmark> findByUserIdAndCategoryIdAndDeletedDateIsNullOrderByIdDesc(Long userId, Long categoryId, Pageable pageable);
+    List<Bookmark> findByUserIdAndDeletedDateIsNullOrderByIdDesc(Long userId, Pageable pageable);
 }

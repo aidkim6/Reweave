@@ -1,5 +1,6 @@
 package com.reweave.backend.domain.purposegroup.service;
 
+import com.reweave.backend.domain.ai.event.PurposeGroupHeadlineRequestedEvent;
 import com.reweave.backend.domain.bookmark.entity.Bookmark;
 import com.reweave.backend.domain.bookmark.repository.BookmarkRepository;
 import com.reweave.backend.domain.category.repository.CategoryRepository;
@@ -10,6 +11,7 @@ import com.reweave.backend.domain.purposegroup.repository.PurposeGroupBookmarkRe
 import com.reweave.backend.domain.purposegroup.repository.PurposeGroupRepository;
 import com.reweave.backend.global.exception.CustomException;
 import com.reweave.backend.global.exception.ErrorCode;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,15 +28,18 @@ public class PurposeGroupService {
     private final CategoryRepository categoryRepository;
     private final PurposeGroupBookmarkRepository purposeGroupBookmarkRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PurposeGroupService(PurposeGroupRepository purposeGroupRepository,
                                CategoryRepository categoryRepository,
                                PurposeGroupBookmarkRepository purposeGroupBookmarkRepository,
-                               BookmarkRepository bookmarkRepository) {
+                               BookmarkRepository bookmarkRepository,
+                               ApplicationEventPublisher eventPublisher) {
         this.purposeGroupRepository = purposeGroupRepository;
         this.categoryRepository = categoryRepository;
         this.purposeGroupBookmarkRepository = purposeGroupBookmarkRepository;
         this.bookmarkRepository = bookmarkRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     // 목적 그룹 생성
@@ -50,7 +55,24 @@ public class PurposeGroupService {
                 request.status(),
                 request.categoryId()
         );
-        return PurposeGroupResponse.from(purposeGroupRepository.save(purposeGroup));
+        PurposeGroup saved = purposeGroupRepository.save(purposeGroup);
+
+        // 커밋 후 백그라운드에서 추천문구 생성 (응답은 기다리지 않음)
+        eventPublisher.publishEvent(
+                new PurposeGroupHeadlineRequestedEvent(saved.getId(), saved.getPurposeName()));
+
+        return PurposeGroupResponse.from(saved);
+    }
+
+    // 추천문구 저장 (백그라운드 리스너에서 호출)
+    @Transactional
+    public void updateRecallHeadline(Long purposeGroupId, String expectedPurposeName, String headline) {
+        purposeGroupRepository.findById(purposeGroupId).ifPresent(group -> {
+            // 문구 생성 중에 그룹 이름이 바뀌었다면 오래된 문구로 덮어쓰지 않는다
+            if (group.getPurposeName().equals(expectedPurposeName)) {
+                group.updateRecallHeadline(headline);
+            }
+        });
     }
 
     // 목적 그룹 목록 조회
@@ -79,8 +101,16 @@ public class PurposeGroupService {
         PurposeGroup purposeGroup = purposeGroupRepository.findByIdAndUserId(purposeGroupId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PURPOSE_GROUP_NOT_FOUND));
 
+        String previousName = purposeGroup.getPurposeName();
         purposeGroup.update(request.purposeName().trim(), request.categoryId());
         purposeGroupRepository.flush();
+
+        // 이름이 바뀌었으면 추천문구를 새로 생성
+        if (!previousName.equals(purposeGroup.getPurposeName())) {
+            eventPublisher.publishEvent(
+                    new PurposeGroupHeadlineRequestedEvent(purposeGroup.getId(), purposeGroup.getPurposeName()));
+        }
+
         return PurposeGroupResponse.from(purposeGroup);
     }
 
