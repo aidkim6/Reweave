@@ -107,6 +107,7 @@ public class PurposeGroupService {
 
         // 이름이 바뀌었으면 추천문구를 새로 생성
         if (!previousName.equals(purposeGroup.getPurposeName())) {
+            purposeGroup.updateRecallHeadline(null);
             eventPublisher.publishEvent(
                     new PurposeGroupHeadlineRequestedEvent(purposeGroup.getId(), purposeGroup.getPurposeName()));
         }

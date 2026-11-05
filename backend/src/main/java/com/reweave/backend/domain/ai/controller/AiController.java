@@ -22,11 +22,11 @@ public class AiController {
 
     // 목적 그룹 북마크 AI 자동 매칭 API
     @PostMapping("/recommend")
-    public ResponseEntity<ApiResponse<AiRecommendResponse>> recommendBookmarks(
+    public ResponseEntity<AiRecommendResponse> recommendBookmarks(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody AiRecommendRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(aiService.recommendBookmarksForPurpose(userId, request)));
+        return ResponseEntity.ok(aiService.recommendBookmarksForPurpose(userId, request));
     }
 
     // 오늘의 링크 AI 리콜 목록 조회 API

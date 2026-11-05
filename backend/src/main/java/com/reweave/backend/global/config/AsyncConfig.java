@@ -18,6 +18,9 @@ public class AsyncConfig {
         executor.setMaxPoolSize(4);
         executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("ai-");
+        executor.setRejectedExecutionHandler((r, e) ->
+                org.slf4j.LoggerFactory.getLogger(AsyncConfig.class)
+                        .warn("aiExecutor가 가득 차 추천문구 생성 작업을 건너뜁니다"));
         return executor;
     }
 }
