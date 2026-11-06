@@ -28,8 +28,8 @@ public enum ErrorCode {
     NOT_IN_TRASH(HttpStatus.BAD_REQUEST, "삭제되지 않은 북마크입니다."),
 
     // 목적 그룹
-    PURPOSE_GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "목적 그룹을 찾을 수 없습니다.");
-
+    PURPOSE_GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "목적 그룹을 찾을 수 없습니다."),
+    INVALID_PURPOSE_GROUP_ORDER(HttpStatus.BAD_REQUEST, "목적 그룹 순서 정보가 올바르지 않습니다.");
     private final HttpStatus status;
     private final String message;
 

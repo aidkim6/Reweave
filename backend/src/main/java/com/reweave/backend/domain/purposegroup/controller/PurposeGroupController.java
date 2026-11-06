@@ -36,10 +36,20 @@ public class PurposeGroupController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(purposeGroupService.create(userId, request)));
     }
 
-    // 목적 그룹 목록 조회
+    // 목적 그룹 목록 조회 (정렬 순서대로)
     @GetMapping
     public ResponseEntity<ApiResponse<List<PurposeGroupResponse>>> findAll(@AuthenticationPrincipal Long userId) {
         return ResponseEntity.ok(ApiResponse.ok(purposeGroupService.findAll(userId)));
+    }
+
+    // 목적 그룹 순서 변경 (내 목적 그룹 ID 전체를 원하는 순서대로 전달)
+    @PatchMapping("/order")
+    public ResponseEntity<ApiResponse<Void>> changeOrder(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody PurposeGroupOrderRequest request
+    ) {
+        purposeGroupService.changeOrder(userId, request);
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     // 목적 그룹 상세 조회
