@@ -29,6 +29,10 @@ public class PurposeGroup extends BaseTimeEntity {
     @Column(name = "recall_headline", length = 100)
     private String recallHeadline;
 
+    // 프로젝트 목록 정렬 순서 (작을수록 앞, 새 그룹은 0으로 맨 앞에 추가)
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder;
+
     protected PurposeGroup() {
     }
 
@@ -58,6 +62,10 @@ public class PurposeGroup extends BaseTimeEntity {
         this.recallHeadline = recallHeadline;
     }
 
+    public void changeSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
     public Long getId() {
         return id;
     }
@@ -80,5 +88,9 @@ public class PurposeGroup extends BaseTimeEntity {
 
     public String getRecallHeadline() {
         return recallHeadline;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
     }
 }

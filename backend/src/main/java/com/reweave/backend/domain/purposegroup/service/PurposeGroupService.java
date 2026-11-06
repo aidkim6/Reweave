@@ -17,8 +17,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -42,12 +46,15 @@ public class PurposeGroupService {
         this.eventPublisher = eventPublisher;
     }
 
-    // 목적 그룹 생성
+    // 목적 그룹 생성: 목록 맨 앞(sort_order 0)에 추가
     @Transactional
     public PurposeGroupResponse create(Long userId, PurposeGroupCreateRequest request) {
         if (request.categoryId() != null) {
             validateCategoryOwnership(request.categoryId(), userId);
         }
+
+        // 기존 그룹의 순서를 하나씩 뒤로 밀고, 새 그룹은 sortOrder 0(기본값)으로 저장
+        purposeGroupRepository.shiftSortOrders(userId);
 
         PurposeGroup purposeGroup = new PurposeGroup(
                 userId,
@@ -75,9 +82,9 @@ public class PurposeGroupService {
         });
     }
 
-    // 목적 그룹 목록 조회
+    // 목적 그룹 목록 조회 (정렬 순서대로)
     public List<PurposeGroupResponse> findAll(Long userId) {
-        return purposeGroupRepository.findAllByUserId(userId)
+        return purposeGroupRepository.findAllByUserIdOrderBySortOrderAscIdDesc(userId)
                 .stream()
                 .map(PurposeGroupResponse::from)
                 .toList();
@@ -105,7 +112,7 @@ public class PurposeGroupService {
         purposeGroup.update(request.purposeName().trim(), request.categoryId());
         purposeGroupRepository.flush();
 
-        // 이름이 바뀌었으면 추천문구를 새로 생성
+        // 이름이 바뀌었으면 이전 이름 기준 문구를 비우고 새로 생성
         if (!previousName.equals(purposeGroup.getPurposeName())) {
             purposeGroup.updateRecallHeadline(null);
             eventPublisher.publishEvent(
@@ -124,6 +131,26 @@ public class PurposeGroupService {
         purposeGroup.updateStatus(request.status());
         purposeGroupRepository.flush();
         return PurposeGroupResponse.from(purposeGroup);
+    }
+
+    // 목적 그룹 순서 변경: 내 목적 그룹 전체를 빠짐없이, 중복 없이 받아야 함
+    @Transactional
+    public void changeOrder(Long userId, PurposeGroupOrderRequest request) {
+        List<Long> ids = request.purposeGroupIds();
+        List<PurposeGroup> myGroups = purposeGroupRepository.findAllByUserIdOrderBySortOrderAscIdDesc(userId);
+
+        Set<Long> requestIds = new HashSet<>(ids);
+        Set<Long> myIds = myGroups.stream().map(PurposeGroup::getId).collect(Collectors.toSet());
+
+        if (requestIds.size() != ids.size() || !requestIds.equals(myIds)) {
+            throw new CustomException(ErrorCode.INVALID_PURPOSE_GROUP_ORDER);
+        }
+
+        Map<Long, PurposeGroup> byId = myGroups.stream()
+                .collect(Collectors.toMap(PurposeGroup::getId, Function.identity()));
+        for (int i = 0; i < ids.size(); i++) {
+            byId.get(ids.get(i)).changeSortOrder(i);
+        }
     }
 
     // 목적 그룹 삭제
