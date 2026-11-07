@@ -4,6 +4,7 @@ import com.reweave.backend.domain.purposegroup.entity.PurposeGroup;
 import com.reweave.backend.domain.purposegroup.entity.PurposeGroupStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record PurposeGroupResponse(
         Long purposeGroupId,
@@ -12,18 +13,41 @@ public record PurposeGroupResponse(
         String purposeName,
         PurposeGroupStatus status,
         LocalDateTime createdDate,
-        LocalDateTime modifiedDate
+        LocalDateTime modifiedDate,
+        List<CategoryTag> categories,
+        long bookmarkCount,
+        List<String> thumbnails
 ) {
 
-    public static PurposeGroupResponse from(PurposeGroup purposeGroup) {
+    // 프로젝트가 참조하는 카테고리 (카드 태그, 수정 화면의 선택 상태)
+    public record CategoryTag(Long categoryId, String categoryName) {
+    }
+
+    /** 프로젝트와 참조 카테고리, 북마크 개수, 썸네일로 응답을 만든다. */
+    public static PurposeGroupResponse of(PurposeGroup purposeGroup,
+                                          List<CategoryTag> categories,
+                                          long bookmarkCount,
+                                          List<String> thumbnails) {
+        // 기존 필드 호환: categoryId는 참조 카테고리 중 첫 번째 (연결 데이터가 없으면 기존 컬럼 값)
+        Long firstCategoryId = categories.isEmpty()
+                ? purposeGroup.getCategoryId()
+                : categories.get(0).categoryId();
+
         return new PurposeGroupResponse(
                 purposeGroup.getId(),
                 purposeGroup.getUserId(),
-                purposeGroup.getCategoryId(),
+                firstCategoryId,
                 purposeGroup.getPurposeName(),
                 purposeGroup.getStatus(),
                 purposeGroup.getCreatedDate(),
-                purposeGroup.getModifiedDate()
+                purposeGroup.getModifiedDate(),
+                categories,
+                bookmarkCount,
+                thumbnails
         );
+    }
+
+    public static PurposeGroupResponse from(PurposeGroup purposeGroup) {
+        return of(purposeGroup, List.of(), 0L, List.of());
     }
 }

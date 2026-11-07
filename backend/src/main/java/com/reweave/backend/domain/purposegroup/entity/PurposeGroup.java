@@ -15,6 +15,7 @@ public class PurposeGroup extends BaseTimeEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    // 참조 카테고리 중 첫 번째 (기존 프론트/리콜 호환용). 전체 참조 카테고리는 purposegroup_categories에 저장
     @Column(name = "category_id")
     private Long categoryId;
 
@@ -50,6 +51,11 @@ public class PurposeGroup extends BaseTimeEntity {
         if (categoryId != null) {
             this.categoryId = categoryId;
         }
+    }
+
+    // null도 허용 (참조 카테고리를 모두 해제하는 경우)
+    public void updateCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 
     public void updateStatus(PurposeGroupStatus status) {

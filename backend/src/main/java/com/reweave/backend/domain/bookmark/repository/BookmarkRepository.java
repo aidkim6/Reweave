@@ -140,4 +140,9 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     List<Bookmark> findByUserIdAndCategoryIdAndDeletedDateIsNullOrderByIdDesc(Long userId, Long categoryId, Pageable pageable);
     List<Bookmark> findByUserIdAndDeletedDateIsNullOrderByIdDesc(Long userId, Pageable pageable);
+
+    // 영구 삭제 전에 목적그룹과의 연결 삭제
+    @Modifying(flushAutomatically = true)
+    @Query("delete from PurposeGroupBookmark pgb where pgb.bookmark.id in :bookmarkIds")
+    int deletePurposeGroupLinks(@Param("bookmarkIds") Collection<Long> bookmarkIds);
 }

@@ -68,6 +68,7 @@ public class BookmarkService {
                 throw new CustomException(ErrorCode.DUPLICATE_BOOKMARK);
             }
             // TODO: 목적그룹_북마크 엔티티가 생기면 연결도 함께 삭제
+            bookmarkRepository.deletePurposeGroupLinks(List.of(existing.getId()));
             bookmarkRepository.delete(existing);
             bookmarkRepository.flush(); // 유니크 제약 때문에 insert 전에 delete 먼저 반영
         });
@@ -202,6 +203,7 @@ public class BookmarkService {
             throw new CustomException(ErrorCode.NOT_IN_TRASH);
         }
         // TODO: 목적그룹_북마크 연결 삭제
+        bookmarkRepository.deletePurposeGroupLinks(List.of(bookmark.getId()));
         bookmarkRepository.delete(bookmark);
     }
 
@@ -217,6 +219,7 @@ public class BookmarkService {
             throw new CustomException(ErrorCode.NOT_IN_TRASH);
         }
         // TODO: 목적그룹_북마크 연결 삭제
+        bookmarkRepository.deletePurposeGroupLinks(ids);
         bookmarkRepository.deleteAll(bookmarks);
     }
 

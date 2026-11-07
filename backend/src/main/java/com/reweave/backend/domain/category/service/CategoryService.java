@@ -126,6 +126,7 @@ public class CategoryService {
 
         bookmarkRepository.clearCategory(userId, categoryId);
         categoryRepository.clearPurposeGroupCategory(userId, categoryId);
+        categoryRepository.deletePurposeGroupCategoryLinks(categoryId);
         categoryRepository.delete(category);
     }
 
