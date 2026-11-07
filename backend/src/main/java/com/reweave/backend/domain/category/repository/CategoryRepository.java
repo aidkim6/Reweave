@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,4 +38,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     @Modifying(flushAutomatically = true)
     @Query("delete from PurposeGroupCategory pgc where pgc.categoryId = :categoryId")
     int deletePurposeGroupCategoryLinks(@Param("categoryId") Long categoryId);
+
+    // 참조 카테고리 소유권 검증용: 내 카테고리 중 해당 ID의 개수
+    long countByIdInAndUserId(Collection<Long> ids, Long userId);
 }

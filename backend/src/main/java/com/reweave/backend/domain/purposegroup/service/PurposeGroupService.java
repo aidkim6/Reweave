@@ -220,15 +220,14 @@ public class PurposeGroupService {
 
     // ===================== 참조 카테고리 / 응답 조립 =====================
 
-    // 카테고리 소유권 검증 메서드
-    private void validateCategoryOwnership(Long categoryId, Long userId) {
-        categoryRepository.findByIdAndUserId(categoryId, userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.CATEGORY_NOT_FOUND));
-    }
-
+    /** 참조 카테고리가 모두 내 카테고리인지 count 쿼리 한 번으로 검증한다. 하나라도 아니면 CATEGORY_NOT_FOUND. */
     private void validateCategoriesOwnership(List<Long> categoryIds, Long userId) {
-        for (Long categoryId : categoryIds) {
-            validateCategoryOwnership(categoryId, userId);
+        if (categoryIds.isEmpty()) {
+            return;
+        }
+        List<Long> distinctIds = categoryIds.stream().distinct().toList();
+        if (categoryRepository.countByIdInAndUserId(distinctIds, userId) != distinctIds.size()) {
+            throw new CustomException(ErrorCode.CATEGORY_NOT_FOUND);
         }
     }
 
@@ -244,6 +243,7 @@ public class PurposeGroupService {
         }
     }
 
+    /** 목록의 첫 번째 값을 돌려주고, 비어 있으면 null을 돌려준다. */
     private static Long firstOrNull(List<Long> ids) {
         return ids.isEmpty() ? null : ids.get(0);
     }
@@ -269,6 +269,7 @@ public class PurposeGroupService {
                 ));
     }
 
+    /** 프로젝트 1개의 응답을 조립한다 (참조 카테고리 태그, 북마크 개수, 개수가 있을 때만 썸네일 조회). */
     private PurposeGroupResponse buildResponse(PurposeGroup group,
                                                Map<Long, List<PurposeGroupResponse.CategoryTag>> tagsByGroup,
                                                Map<Long, Long> countsByGroup) {
@@ -280,6 +281,7 @@ public class PurposeGroupService {
         return PurposeGroupResponse.of(group, tags, count, thumbnails);
     }
 
+    /** 프로젝트 1개를 응답으로 변환한다 (태그와 개수를 함께 조회). */
     private PurposeGroupResponse toResponse(PurposeGroup group) {
         List<Long> ids = List.of(group.getId());
         return buildResponse(group, loadTags(ids), loadCounts(ids));

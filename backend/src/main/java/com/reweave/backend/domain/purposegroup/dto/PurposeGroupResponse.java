@@ -23,6 +23,7 @@ public record PurposeGroupResponse(
     public record CategoryTag(Long categoryId, String categoryName) {
     }
 
+    /** 프로젝트와 참조 카테고리, 북마크 개수, 썸네일로 응답을 만든다. */
     public static PurposeGroupResponse of(PurposeGroup purposeGroup,
                                           List<CategoryTag> categories,
                                           long bookmarkCount,

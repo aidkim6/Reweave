@@ -22,6 +22,7 @@ public class PurposeGroupCategoryBackfillRunner implements ApplicationRunner {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /** 서버 시작 시 연결 행이 없는 기존 프로젝트의 참조 카테고리를 연결 테이블로 채운다. 실패해도 서버 시작은 막지 않는다. */
     @Override
     public void run(ApplicationArguments args) {
         try {
