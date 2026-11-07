@@ -32,4 +32,9 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     @Modifying(flushAutomatically = true)
     @Query("update PurposeGroup p set p.categoryId = null where p.userId = :userId and p.categoryId = :categoryId")
     int clearPurposeGroupCategory(@Param("userId") Long userId, @Param("categoryId") Long categoryId);
+
+    // 카테고리 삭제 시 목적그룹의 참조 카테고리 연결 행 삭제
+    @Modifying(flushAutomatically = true)
+    @Query("delete from PurposeGroupCategory pgc where pgc.categoryId = :categoryId")
+    int deletePurposeGroupCategoryLinks(@Param("categoryId") Long categoryId);
 }
