@@ -1,6 +1,6 @@
 @import '../../styles/main.scss';
 
-/* 페이지 이동 시 세로 스크롤바로 인한 위치 밀림 현상 방지 */
+
 html {
   overflow-y: scroll;
 }
@@ -84,7 +84,6 @@ html {
             z-index: 10;
             padding: 12px 0 16px;
             box-sizing: border-box;
-            /* 💡 배경색 불일치 문제를 없애기 위해 투명하게 처리하여 전체 배경과 100% 일치시킴 */
             background-color: transparent; 
             width: 100%;
 
@@ -214,7 +213,7 @@ html {
             }
         }
 
-        /* 아이템 그리드 (프로젝트 메인과 동일한 162px 규격 적용) */
+
         .item-grid {
             display: grid;
             grid-template-columns: repeat(4, 162px);
@@ -493,7 +492,6 @@ html {
     }
 }
 
-/* 모바일 뷰 대응 (메인과 동일한 2열 규격) */
 @media screen and (max-width: 768px) {
   .project-detail-wrap {
     width: 100%;

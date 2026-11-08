@@ -1,10 +1,15 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import './ProjectSort.scss';
 
 import backIcon from '../../assets/back-arrow.svg';
 import menuIcon from '../../assets/project/menu.svg';
 
 const ProjectSort = ({ projectList = [], onClose, onSave }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [items, setItems] = useState(
     projectList.length > 0
       ? projectList
@@ -25,20 +30,16 @@ const ProjectSort = ({ projectList = [], onClose, onSave }) => {
   const activeIndexRef = useRef(null);
   const itemsRef = useRef(items);
 
-
   itemsRef.current = items;
-
 
   const handleBackClick = () => {
     setShowExitModal(true);
   };
 
-
   const handleSave = () => {
-    onSave(items);
-    onClose();
+    if (onSave) onSave(items);
+    if (onClose) onClose();
   };
-
 
   const handlePointerDown = (e, index) => {
     e.preventDefault();
@@ -50,12 +51,10 @@ const ProjectSort = ({ projectList = [], onClose, onSave }) => {
     setDraggedIndex(index);
     setDragOffsetY(0);
 
-
     window.addEventListener('pointermove', handleWindowPointerMove);
     window.addEventListener('pointerup', handleWindowPointerUp);
     window.addEventListener('pointercancel', handleWindowPointerUp);
   };
-
 
   const handleWindowPointerMove = (e) => {
     if (activeIndexRef.current === null) return;
@@ -70,7 +69,6 @@ const ProjectSort = ({ projectList = [], onClose, onSave }) => {
 
     const currentItems = itemsRef.current;
 
-
     if (
       targetIndex >= 0 &&
       targetIndex < currentItems.length &&
@@ -79,7 +77,6 @@ const ProjectSort = ({ projectList = [], onClose, onSave }) => {
       const updated = [...currentItems];
       const [movedItem] = updated.splice(activeIndexRef.current, 1);
       updated.splice(targetIndex, 0, movedItem);
-
 
       activeIndexRef.current = targetIndex;
       startYRef.current = currentY;
@@ -102,7 +99,6 @@ const ProjectSort = ({ projectList = [], onClose, onSave }) => {
 
   return (
     <div className="project-sort-container">
-
       <header className="form-header">
         <div className="header-left">
           <button className="back-btn" onClick={handleBackClick} type="button">
@@ -114,7 +110,6 @@ const ProjectSort = ({ projectList = [], onClose, onSave }) => {
           완료
         </button>
       </header>
-
 
       <main className="form-content">
         <ul className="sort-list" ref={listRef}>

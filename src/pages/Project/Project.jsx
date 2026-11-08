@@ -19,7 +19,7 @@ import addIcon from '../../assets/project/add.svg';
 import sortIcon from '../../assets/project/sort.svg';
 
 const Project = () => {
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'create' | 'edit' | 'sort' | 'detail'
+  const [viewMode, setViewMode] = useState('list');
   const [editingProject, setEditingProject] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
 
@@ -122,7 +122,7 @@ const Project = () => {
     );
   }
 
-  // 💡 상세 페이지에서 뒤로가기(`onClose`)를 누르면 보관함이 아니라 프로젝트 목록('list')으로 복귀
+
   if (viewMode === 'detail') {
     return (
       <ProjectDetail

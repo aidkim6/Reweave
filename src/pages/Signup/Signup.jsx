@@ -14,12 +14,15 @@ const Signup = () => {
     nickname: '',
   });
 
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+    if (errorMessage) setErrorMessage('');
   };
 
   const handleClear = (fieldName) => {
@@ -29,15 +32,41 @@ const Signup = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.passwordConfirm) {
+      setErrorMessage('비밀번호가 일치하지 않습니다.');
       return;
     }
 
-    console.log('Signup Submit:', formData);
-    navigate('/login');
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          nickname: formData.nickname,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+
+        setErrorMessage(data.message || '회원가입에 실패했습니다.');
+        return;
+      }
+
+
+      navigate('/login');
+    } catch (error) {
+      console.error('회원가입 통신 에러:', error);
+      setErrorMessage('서버와 통신 중 문제가 발생했습니다.');
+    }
   };
 
   const isPasswordMismatch =
@@ -46,7 +75,6 @@ const Signup = () => {
 
   return (
     <div className="signup-container">
-
       <header className="signup-header">
         <button
           type="button"
@@ -57,7 +85,6 @@ const Signup = () => {
         </button>
         <h1 className="header-title">회원가입</h1>
       </header>
-
 
       <form className="signup-form" onSubmit={handleSubmit}>
         <div className="field-group">
@@ -102,7 +129,6 @@ const Signup = () => {
           </div>
         </div>
 
-
         <div className="field-group">
           <label htmlFor="passwordConfirm">비밀번호 확인</label>
           <div className={`input-box ${isPasswordMismatch ? 'error' : ''}`}>
@@ -130,7 +156,6 @@ const Signup = () => {
           )}
         </div>
 
-
         <div className="field-group">
           <label htmlFor="nickname">닉네임</label>
           <div className="input-box">
@@ -155,6 +180,7 @@ const Signup = () => {
           </div>
         </div>
 
+        {errorMessage && <p className="error-text" style={{ marginBottom: '10px' }}>{errorMessage}</p>}
 
         <div className="bottom-area">
           <div className="login-link-container">

@@ -1,6 +1,5 @@
 @import '../../styles/mixins';
 
-/* 💡 페이지 이동 시 세로 스크롤바 생성으로 인한 위치 밀림 현상 방지 */
 html {
   overflow-y: scroll;
 }
@@ -12,7 +11,6 @@ html {
   min-height: 844px;
   margin: 0;
   padding: 42px 0 120px;
-  /* 💡 background-color 제거! 보관함처럼 글로벌 배경색을 그대로 투과시켜 컬러 일치 */
   color: #fbfdfb;
   position: relative;
   box-sizing: border-box;

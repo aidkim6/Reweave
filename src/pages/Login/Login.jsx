@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.scss';
 
-
 import logoImg from '../../assets/logo.svg';
 import xCircleIcon from '../../assets/x-circle.svg'; 
 import alertIcon from '../../assets/alert-circle.svg'; 
@@ -32,21 +31,44 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 임시 예시 검증
-    if (formData.email !== '123456@naver.com') {
-      setErrorMessage('존재하지 않는 아이디입니다.');
-      return;
-    }
+    try {
 
-    if (formData.password !== 'wasd1234!!') {
-      setErrorMessage('비밀번호를 다시 입력해주세요.');
-      return;
-    }
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          clientType: "WEB",
+        }),
+      });
 
-    navigate('/home');
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(data.message || '아이디 또는 비밀번호를 확인해주세요.');
+        return;
+      }
+
+
+      const tokenData = data.data || data;
+      if (tokenData.accessToken) {
+        localStorage.setItem('accessToken', tokenData.accessToken);
+        if (tokenData.refreshToken) {
+          localStorage.setItem('refreshToken', tokenData.refreshToken);
+        }
+      }
+
+      navigate('/home');
+    } catch (error) {
+      console.error('로그인 통신 에러:', error);
+      setErrorMessage('서버와 통신 중 문제가 발생했습니다.');
+    }
   };
 
   return (
@@ -55,10 +77,8 @@ const Login = () => {
         <img src={logoImg} alt="Reweave Logo" className="logo-img" />
       </div>
 
-
       <form className="login-form" onSubmit={handleSubmit}>
         <div className="input-box">
-
           <div className="input-row">
             <input
               type="email"
@@ -81,11 +101,10 @@ const Login = () => {
           </div>
 
           <div className="input-divider" />
-
     
           <div className="input-row">
             <input
-              type="text"
+              type="password" 
               id="password"
               name="password"
               placeholder="비밀번호"
@@ -105,12 +124,10 @@ const Login = () => {
           </div>
         </div>
 
-
         <button type="submit" className="login-btn">
           로그인하기
         </button>
       </form>
-
 
       <div className="signup-link-container">
         <button
@@ -121,7 +138,6 @@ const Login = () => {
           회원가입
         </button>
       </div>
-
 
       {errorMessage && (
         <div className="error-snackbar">

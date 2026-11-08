@@ -1,33 +1,67 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import './StorageAdd.scss';
 import clear from '../../assets/storage/clear-btn.svg';
 import backIcon from '../../assets/back-arrow.svg';
 
-const ProjectSort = ({ title = "새 카테고리 만들기", onSave, onClose }) => {
+const ProjectSort = ({ title = "새 카테고리 만들기", onSave }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     
-    // 입력 상태 관리 (제목, 설명)
+    const isFromModal = location.state?.fromModal;
+    const prevModalData = location.state?.modalData || {};
+    
     const [categoryName, setCategoryName] = useState('');
     const [categoryDesc, setCategoryDesc] = useState('');
-    
-    // 이탈 모달 상태
     const [showExitModal, setShowExitModal] = useState(false);
 
     const handleBackClick = () => {
         if (categoryName.trim() || categoryDesc.trim()) {
             setShowExitModal(true);
         } else {
-            navigate(-1);
+            handleReturnToModal();
         }
     };
 
-    // 저장 버튼 클릭
-    const handleSave = () => {
-        if (onSave) {
-            onSave({ name: categoryName, description: categoryDesc });
+    const handleReturnToModal = (newCatId = null) => {
+        if (isFromModal) {
+            if (newCatId) {
+                sessionStorage.setItem('newCategoryId', newCatId);
+            }
+            sessionStorage.setItem('reopenSaveModal', 'true');
+            sessionStorage.setItem('tempSaveUrl', prevModalData.url || '');
+            sessionStorage.setItem('tempSaveMemo', prevModalData.memo || '');
         }
         navigate(-1);
+    };
+
+    const handleSave = async () => {
+        if (!categoryName.trim()) return;
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await axios.post(
+                '/api/categories',
+                {
+                    categoryName: categoryName.trim(),
+                    description: categoryDesc.trim() || null,
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            const createdCategory = response.data?.data;
+            if (onSave) {
+                onSave(createdCategory);
+            }
+
+            handleReturnToModal(createdCategory?.categoryId);
+        } catch (error) {
+            console.error('카테고리 생성 실패:', error);
+            alert(error.response?.data?.message || '카테고리 생성에 실패했어요.');
+        }
     };
 
     const handleClearName = () => setCategoryName('');
@@ -92,7 +126,6 @@ const ProjectSort = ({ title = "새 카테고리 만들기", onSave, onClose }) 
                 </div>
             </main>
 
-            {/* 나가기 확인 모달 */}
             {showExitModal && (
                 <div className="exit-modal-overlay">
                     <div className="exit-modal-card">
@@ -107,10 +140,7 @@ const ProjectSort = ({ title = "새 카테고리 만들기", onSave, onClose }) 
                             <button 
                                 type="button" 
                                 className="exit-btn" 
-                                onClick={() => {
-                                    setShowExitModal(false);
-                                    navigate(-1);
-                                }}
+                                onClick={() => handleReturnToModal()}
                             >
                                 나가기
                             </button>

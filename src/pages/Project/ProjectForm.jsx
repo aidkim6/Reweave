@@ -11,16 +11,12 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [status, setStatus] = useState(null);
   
-
   const [showExitModal, setShowExitModal] = useState(false);
 
   const availableCategories = ['청소', '여행', '쇼핑', '맛집', '디자인', '취업준비', '포트폴리오', '뜨개질', '요리'];
   const availableStatuses = ['시작 전', '진행 중', '완료'];
 
-
   const isValid = title.trim().length > 0 && selectedCategories.length > 0 && status !== null;
-
-
   const isDirty = title.trim().length > 0 || selectedCategories.length > 0 || status !== null;
 
   useEffect(() => {
@@ -50,7 +46,6 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
   const handleClearTitle = () => {
     setTitle('');
   };
-
 
   const handleBackClick = () => {
     if (isDirty) {
@@ -90,7 +85,6 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
       </header>
 
       <main className="form-content">
-
         <section className="form-section title-section">
           <label className="section-label">프로젝트 제목</label>
           <div className="input-box">
@@ -108,7 +102,6 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
             )}
           </div>
         </section>
-
 
         <section className="form-section category-section">
           <label className="section-label">참조할 카테고리 선택</label>
@@ -129,7 +122,6 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
           </div>
         </section>
 
-
         <section className="form-section status-section">
           <label className="section-label">프로젝트 상태 설정</label>
           <div className="status-toggle-group">
@@ -149,7 +141,6 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
           </div>
         </section>
       </main>
-
 
       {showExitModal && (
         <div className="exit-modal-overlay">

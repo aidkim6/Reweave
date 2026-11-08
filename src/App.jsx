@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login/Login.jsx';
 import Signup from './pages/Signup/Signup.jsx';
 import Home from './pages/Home/Home.jsx';
-import Project from './pages/Project/Project.jsx'; // 새로 만든 Project 페이지 연결
+import Project from './pages/Project/Project.jsx';
 import Mypage from './pages/Mypage/myPage.jsx';
 import Storage from './pages/Storage/Storage.jsx';
 import StorageAdd from './pages/Storage/StorageAdd.jsx';
@@ -14,24 +14,29 @@ import LinkDetail from './pages/LinkDetail/LinkDetail.jsx';
 import BottomNav from './components/BottomNav/BottomNav.jsx';
 import SaveLinkModal from './components/SaveLinkModal/SaveLinkModal.jsx';
 
-
-
 import './App.scss';
-
-
 
 function App() {
   const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const hideBottomNavPaths = ['/login', '/signup'];
-  // 링크 상세 화면(/link/:id)은 디자인에 하단 메뉴바가 없어요
   const showBottomNav =
     !hideBottomNavPaths.includes(location.pathname) && !location.pathname.startsWith('/link/');
 
+  // StorageAdd 페이지에서 카테고리를 만들고 돌아왔을 때 세션 신호를 감지해 모달을 자동으로 다시 열어줌
+  useEffect(() => {
+    const shouldReopen = sessionStorage.getItem('reopenSaveModal');
+    if (shouldReopen === 'true') {
+      sessionStorage.removeItem('reopenSaveModal');
+      setIsModalOpen(true);
+    }
+  }, [location.pathname]);
+
+  // 💡 북마크 저장 성공 시 홈 화면 목록 갱신을 위해 이벤트 발생
   const handleSaveLink = (linkData) => {
     console.log('저장된 링크 데이터:', linkData);
-    // TODO: 저장 API 연동 또는 상태 업데이트
+    window.dispatchEvent(new CustomEvent('bookmarkSaved'));
   };
 
   return (
@@ -50,7 +55,6 @@ function App() {
           <Route path="/link/:id" element={<LinkDetail />} />
           <Route path="/project" element={<Project />} />
           <Route path="/mypage" element={<Mypage />} />
-          
         </Routes>
       </main>
 
@@ -63,7 +67,7 @@ function App() {
       <SaveLinkModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveLink}
+        onSaveSuccess={handleSaveLink}
       />
     </div>
   );

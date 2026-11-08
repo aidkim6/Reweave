@@ -16,7 +16,6 @@ function ProjectDetail({ projectData, onClose }) {
     const { id } = useParams();
     const location = useLocation();
 
-    // 💡 부모에서 받은 props(projectData)나 라우터 state, 혹은 기본값 순서대로 안전하게 이름 추출
     const projectName = projectData?.title || location.state?.projectName || '진행 중인 프로젝트';
 
     const [items, setItems] = useState([
@@ -66,7 +65,7 @@ function ProjectDetail({ projectData, onClose }) {
         setActiveModal(null);
     };
 
-    // 뒤로가기 처리 (prop으로 온 onClose가 있으면 실행, 없으면 라우터 네비게이트)
+
     const handleBack = () => {
         if (onClose) {
             onClose();
@@ -77,7 +76,6 @@ function ProjectDetail({ projectData, onClose }) {
 
     return (
         <div className="project-detail-wrap" onClick={() => setSortDropdownOpen(false)}>
-            {/* 고정 헤더 */}
             <header className="detail-header">
                 <div className="header-left">
                     <button className="back-btn" onClick={handleBack} type="button">
@@ -96,9 +94,8 @@ function ProjectDetail({ projectData, onClose }) {
                 </div>
             </header>
 
-            {/* 메인 콘텐츠 영역 */}
             <main className="detail-main">
-                {/* 상단 컨트롤 바 */}
+
                 <div className="sticky-action-bar">
                     {!isSelectMode ? (
                         <div className="normal-bar">
@@ -149,7 +146,7 @@ function ProjectDetail({ projectData, onClose }) {
                     )}
                 </div>
 
-                {/* 아이템 그리드 */}
+
                 <div className="item-grid">
                     {items.map((item) => {
                         const isSelected = selectedIds.includes(item.id);
@@ -183,7 +180,6 @@ function ProjectDetail({ projectData, onClose }) {
                 </div>
             </main>
 
-            {/* 모달 영역 (이동 / 삭제) */}
             {activeModal === 'move' && (
                 <div className="modal-overlay-detail" onClick={() => setActiveModal(null)}>
                     <div className="modal-content move-modal" onClick={(e) => e.stopPropagation()}>

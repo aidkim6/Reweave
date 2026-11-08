@@ -1,6 +1,5 @@
 @import '../../styles/mixins';
 
-/* 💡 세로 스크롤바 공간을 항상 고정시켜서 페이지 이동 시 위치 틀어짐 방지 */
 html {
   overflow-y: scroll;
 }
@@ -24,7 +23,8 @@ html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 768px;
+  width: 100%;
+  max-width: 720px;
   height: 60px;
   margin-bottom: 22px;
   padding: 14px 24px;
@@ -38,9 +38,10 @@ html {
 
 .home-content {
   flex: 1;
-  width: 720px;
+  width: 100%;
+  max-width: 720px;
   margin: 0 auto;              
-  padding: 0;
+  padding: 0 24px;
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -89,6 +90,7 @@ html {
   .slider-wrapper {
     position: relative;
     width: 100%;
+    margin-left: 0;
 
     .slider-arrow {
       display: none;
@@ -100,27 +102,26 @@ html {
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
-        width: 40px;
-        height: 40px;
+        width: 68px;
+        height: 68px;
         padding: 0;
         background: none;
         border: none;
         cursor: pointer;
         z-index: 10;
-        overflow: hidden;
 
         img {
-          width: 70px;
-          height: 70px;
+          width: 68px;
+          height: 68px;
           flex-shrink: 0;
         }
 
         &.left {
-          left: -24px;
+          left: -34px; 
         }
 
         &.right {
-          right: -24px;
+          right: -34px; 
         }
       }
     }
@@ -128,9 +129,11 @@ html {
     .card-slider {
       display: flex;
       gap: 12px;
-      padding: 0;
+      padding: 0; 
       overflow-x: auto;
       scroll-snap-type: x mandatory;
+      width: 100%;
+      box-sizing: border-box;
 
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -153,10 +156,6 @@ html {
         box-sizing: border-box;
         background: linear-gradient(180deg, rgba(33, 33, 33, 0) 0%, #686868 92.31%), #3a3d3a;
         scroll-snap-align: center;
-
-        @media (min-width: 768px) {
-          scroll-snap-align: start;
-        }
 
         .card-info {
           h4 {
@@ -375,14 +374,13 @@ html {
           font-size: 14px;
           font-weight: 400;
           line-height: 150%;
-          letter-spacing: -0.28px;
+          letter-spacing: -0.26px;
         }
       }
     }
   }
 }
 
-/* 모바일 뷰 대응 */
 @media screen and (max-width: 768px) {
   .home-container {
     width: 100%;
@@ -393,12 +391,33 @@ html {
 
   .home-header {
     width: 100%;
-    padding: 14px 20px;
+    max-width: 100%;
+    padding: 14px 24px;
     margin-bottom: 12px;
   }
 
   .home-content {
-    width: calc(100% - 40px);
-    margin: 0 20px;
+    width: 100%;
+    margin: 0;
+    padding: 0 24px;
+  }
+
+  .today-section {
+    width: calc(100% + 48px);
+    margin-left: -24px;
+
+    .section-title {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .slider-wrapper {
+      width: 100%;
+      margin-left: 0;
+
+      .card-slider {
+        padding: 0 24px;
+      }
+    }
   }
 }
