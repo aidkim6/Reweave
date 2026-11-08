@@ -9,7 +9,6 @@ function MyPage() {
     const [isLogoutOpen, setIsLogoutOpen] = useState(false);
     const [me, setMe] = useState(null);
 
-    // 화면이 처음 열릴 때 내 정보를 서버에서 가져와요
     useEffect(() => {
         api
             .get('/api/users/me')
@@ -57,7 +56,7 @@ function MyPage() {
             </div>
 
             {isLogoutOpen && (
-                <div className="modal-overlay" onClick={() => setIsLogoutOpen(false)}>
+                <div className="mypage-modal-overlay" onClick={() => setIsLogoutOpen(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <p className="modal-text">로그아웃 하시겠습니까?</p>
                         <div className="modal-buttons">
