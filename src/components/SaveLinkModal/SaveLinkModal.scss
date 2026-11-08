@@ -1,37 +1,36 @@
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%; 
-  height: 100%;
+  inset: 0; /* top: 0; left: 0; right: 0; bottom: 0; 과 동일 */
+  width: 100vw; 
+  height: 100dvh; /* 모바일 주소창/네비바가 생기고 사라져도 완벽하게 화면을 덮음 */
   background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: flex-end; 
-  z-index: 1000;
-
-
-  @media (min-width: 768px) {
-    align-items: center;
-  }
+  z-index: 9999; /* 하단 네비게이션바 등 모든 요소 위에 무조건 덮이도록 */
+  display: block; /* 💡 flex 정렬 삭제! absolute 포지셔닝으로 강제 바닥 고정 */
 }
 
 .modal-content {
-  position: relative;
+  position: absolute;
+  bottom: 0; /* 💡 모바일 환경: 무조건 화면 맨 아래에 딱 붙임! */
+  left: 50%;
+  transform: translateX(-50%); /* 가로 정중앙 */
+  
   width: 100%;
   max-width: 390px; 
-  margin: 0 auto;   
   height: 501px;
   border-radius: 20px 20px 0 0;
   background: var(--black-bg-2, #1a1c1b);
-  box-shadow: 0 4px 25px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: 0 -4px 25px 0 rgba(0, 0, 0, 0.15); /* 바텀시트 느낌나게 그림자 방향 위로 */
   padding: 24px 24px 32px 24px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
 
-
   @media (min-width: 768px) {
+    /* 💡 PC 환경: 화면 정중앙에 팝업 형태로 띄움 */
+    top: 50%;
+    bottom: auto; /* 바닥 고정 해제 */
+    transform: translate(-50%, -50%); /* 가로세로 완벽 중앙 정렬 */
+    
     width: 408px;
     max-width: 408px;
     height: 480px;
@@ -39,7 +38,7 @@
     border: 1px solid var(--gray-150, rgba(82, 87, 83, 0.50));
     background: #1D1F1E;
     box-shadow: 0 4px 25px 0 rgba(0, 0, 0, 0.15);
-    padding: 24px 24px 24px 24px;
+    padding: 24px;
   }
 
   .modal-title {
@@ -60,7 +59,6 @@
     height: 100%;
   }
 }
-
 
 .modal-close-btn {
   display: none;
@@ -262,7 +260,6 @@
   font-weight: 600;
   line-height: 150%;
   letter-spacing: -0.4px;
-
 
   @media (min-width: 768px) {
     height: 52px;
