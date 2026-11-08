@@ -1,21 +1,18 @@
 @import '../../styles/mixins';
 
-
-html, body {
-  background-color: #1A1C1B !important;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
+/* 💡 세로 스크롤바 공간을 항상 고정시켜서 페이지 이동 시 위치 틀어짐 방지 */
+html {
+  overflow-y: scroll;
 }
 
 .home-container {
   display: flex;
   flex-direction: column;
   width: 100%;                 
-  min-height: 100vh;
+  min-height: 844px;
   margin: 0;
-  background-color: #1A1C1B;
+  padding: 42px 0 120px;
+  align-items: center; 
   color: #fbfdfb;
   position: relative;
   box-sizing: border-box;
@@ -23,14 +20,14 @@ html, body {
   font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
 }
 
-
 .home-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  width: 100%;
-  max-width: 768px;
-  margin: 0 auto;             
-  padding: 24px 24px 12px 24px;
+  width: 768px;
+  height: 60px;
+  margin-bottom: 22px;
+  padding: 14px 24px;
   box-sizing: border-box;
 
   .logo {
@@ -41,10 +38,12 @@ html, body {
 
 .home-content {
   flex: 1;
-  width: 100%;
-  max-width: 768px;
-  margin: 0 auto;               
-  padding: 12px 0 90px;
+  width: 720px;
+  margin: 0 auto;              
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
   box-sizing: border-box;
 
   scrollbar-width: none;
@@ -54,13 +53,12 @@ html, body {
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 0;
 }
-
 
 .today-section {
   .section-title {
-    padding: 0 24px;
+    padding: 0;
     margin-bottom: 16px;
 
     h2, h3 {
@@ -78,11 +76,9 @@ html, body {
     }
 
     .highlight {
-
       @media (max-width: 767px) {
         display: block;
       }
-
 
       @media (min-width: 768px) {
         color: $primary-900;
@@ -120,11 +116,11 @@ html, body {
         }
 
         &.left {
-          left: -2px;
+          left: -24px;
         }
 
         &.right {
-          right: -26px;
+          right: -24px;
         }
       }
     }
@@ -132,14 +128,16 @@ html, body {
     .card-slider {
       display: flex;
       gap: 12px;
-      padding: 0 24px;
+      padding: 0;
       overflow-x: auto;
       scroll-snap-type: x mandatory;
-      scroll-padding: 0 24px;
 
       scrollbar-width: none;
+      -ms-overflow-style: none;
       &::-webkit-scrollbar {
-        display: none;
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
       }
 
       .today-card {
@@ -184,7 +182,7 @@ html, body {
 }
 
 .project-section {
-  padding: 0 24px;
+  padding: 0;
 
   .section-header {
     margin-bottom: 20px;
@@ -207,8 +205,11 @@ html, body {
     overflow-x: auto;
 
     scrollbar-width: none;
+    -ms-overflow-style: none;
     &::-webkit-scrollbar {
-      display: none;
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
 
     .project-card {
@@ -251,7 +252,6 @@ html, body {
           font-weight: 400;
           line-height: 150%;
           letter-spacing: -0.32px;
-
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -286,9 +286,8 @@ html, body {
   }
 }
 
-
 .recent-section {
-  padding: 0 24px;
+  padding: 0;
 
   .section-header {
     margin-bottom: 20px;
@@ -362,7 +361,6 @@ html, body {
           line-height: 150%;
           letter-spacing: -0.28px;
           margin: 0 0 4px 0;
-
           white-space: pre-line;
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -381,5 +379,26 @@ html, body {
         }
       }
     }
+  }
+}
+
+/* 모바일 뷰 대응 */
+@media screen and (max-width: 768px) {
+  .home-container {
+    width: 100%;
+    min-width: 0;
+    padding: 20px 0 120px;
+    align-items: stretch;
+  }
+
+  .home-header {
+    width: 100%;
+    padding: 14px 20px;
+    margin-bottom: 12px;
+  }
+
+  .home-content {
+    width: calc(100% - 40px);
+    margin: 0 20px;
   }
 }

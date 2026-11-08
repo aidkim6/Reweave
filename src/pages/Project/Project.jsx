@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import './Project.scss';
 
-
 import ProjectForm from './ProjectForm';
 import ProjectSort from './ProjectSort';
+import ProjectDetail from './ProjectDetail';
 
 // Assets
 import searchIcon from '../../assets/project/search.svg';
@@ -19,8 +19,9 @@ import addIcon from '../../assets/project/add.svg';
 import sortIcon from '../../assets/project/sort.svg';
 
 const Project = () => {
-  const [viewMode, setViewMode] = useState('list');
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'create' | 'edit' | 'sort' | 'detail'
   const [editingProject, setEditingProject] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   const [categories, setCategories] = useState([
     { id: 1, name: '전체', selected: true },
@@ -95,6 +96,10 @@ const Project = () => {
     setViewMode('list');
   };
 
+  const handleCardClick = (project) => {
+    setSelectedProject(project);
+    setViewMode('detail');
+  };
 
   if (viewMode === 'create' || viewMode === 'edit') {
     return (
@@ -107,13 +112,22 @@ const Project = () => {
     );
   }
 
-
   if (viewMode === 'sort') {
     return (
       <ProjectSort
         projectList={projectList}
         onClose={() => setViewMode('list')}
         onSave={handleSortSave}
+      />
+    );
+  }
+
+  // 💡 상세 페이지에서 뒤로가기(`onClose`)를 누르면 보관함이 아니라 프로젝트 목록('list')으로 복귀
+  if (viewMode === 'detail') {
+    return (
+      <ProjectDetail
+        projectData={selectedProject}
+        onClose={() => setViewMode('list')}
       />
     );
   }
@@ -241,7 +255,12 @@ const Project = () => {
         <section className="project-grid-section">
           <div className="project-grid">
             {projectList.map((item) => (
-              <div key={item.id} className="project-item-card">
+              <div
+                key={item.id}
+                className="project-item-card"
+                onClick={() => handleCardClick(item)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="thumbnail-box">
                   <img src={markIcon} alt="마크" className="mark-icon" />
                 </div>
@@ -270,7 +289,8 @@ const Project = () => {
                         >
                           <button
                             className="action-item edit-item"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingProject(item);
                               setViewMode('edit');
                               setOpenMoreId(null);
@@ -282,7 +302,10 @@ const Project = () => {
                           </button>
                           <button
                             className="action-item delete-item"
-                            onClick={() => setOpenMoreId(null)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMoreId(null);
+                            }}
                             type="button"
                           >
                             <img src={deleteIcon} alt="삭제하기" className="action-icon" />
