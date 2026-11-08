@@ -2,7 +2,7 @@ name: CD with Gradle
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "backend"]
 
 jobs:
   build:
@@ -31,10 +31,10 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_KEY }}
           source: "backend/build/libs/*.jar"
-          target: "/home/ubuntu/Reweave/backend/"
-          strip_components: 3
+          target: "/home/ubuntu/Reweave/"
+          strip_components: 0
 
-      - name: Docker Compose Up
+      - name: Deploy and Docker Compose Up
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -42,5 +42,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/Reweave/backend
-            docker compose up -d --build
+            git pull origin backend
+            docker compose down
+            docker compose up -d --build --force-recreate
             docker image prune -f
