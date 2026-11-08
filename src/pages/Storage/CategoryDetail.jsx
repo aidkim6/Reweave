@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import backIcon from '../../assets/back-arrow.svg';
 import searchIcon from '../../assets/storage/search.svg';
-import moreIcon from '../../assets/storage/moreH.svg';
+import moreIcon from '../../assets/storage/moreW.svg';
 import select from '../../assets/storage/select.svg';
 import down from '../../assets/storage/down.svg';
 import defaulticon from '../../assets/icon.svg';
 import check from '../../assets/storage/check-mark.svg';
 import plus from '../../assets/plus.svg';
 import check1 from '../../assets/storage/check.svg';
+import plus2 from '../../assets/storage/plus.svg';
+import order from '../../assets/storage/order.svg';
+import { api } from '../../features/client';
 import './CategoryDetail.scss';
 
 function CategoryDetail() {
@@ -16,15 +19,10 @@ function CategoryDetail() {
     const { id } = useParams();
     const location = useLocation();
 
-    const categoryName = location.state?.categoryName || '포트폴리오';
+    const [name, setName] = useState(location.state?.categoryName || '');
 
-    const [items, setItems] = useState([
-        { id: 1, title: 'Komi 패키지 디자인 | Fruit & Chocolate', thumb: '' },
-        { id: 2, title: 'Rhythm 포스터 그래픽', thumb: '' },
-        { id: 3, title: 'Matcha Café 브랜딩 프로젝트', thumb: '' },
-        { id: 4, title: '삐삐 | 하루 한 번, 가족에게 보내는 생존신고 서비스 Family Widget Service', thumb: '' },
-        { id: 5, title: '60px를 넘으면 말줄임표 처리하기60px를 넘으면 말줄임표 처리하기60px를 넘으면 말줄임표 처리하기', thumb: '' },
-    ]);
+    const [items, setItems] = useState([]);
+    const [totalCount, setTotalCount] = useState(0);
 
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -32,6 +30,67 @@ function CategoryDetail() {
 
     const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
     const [sortType, setSortType] = useState('최신순');
+    const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+
+    const [categories, setCategories] = useState([{ id: 0, name: '미분류' }]);
+    const [targetCategory, setTargetCategory] = useState({ id: 0, name: '미분류' });
+
+    // 바깥을 누르면 열려 있는 메뉴 닫기
+    useEffect(() => {
+        const close = () => {
+            setHeaderMenuOpen(false);
+            setSortDropdownOpen(false);
+        };
+        window.addEventListener('click', close);
+        return () => window.removeEventListener('click', close);
+    }, []);
+
+    // 이 카테고리의 링크 목록 불러오기
+    const fetchItems = async () => {
+        try {
+            const res = await api.get('/api/bookmarks', {
+                params: {
+                    categoryId: id,
+                    sort: sortType === '최신순' ? 'latest' : 'oldest',
+                    page: 0,
+                    size: 20,
+                },
+            });
+            const data = res.data.data ?? res.data;
+            setItems(
+                data.bookmarks.map((b) => ({
+                    id: b.bookmarkId,
+                    title: b.title,
+                    thumb: b.thumbnailUrl ?? '',
+                }))
+            );
+            setTotalCount(data.totalElements);
+        } catch (e) {
+            console.log('링크 목록 실패', e.response?.status, e.response?.data);
+        }
+    };
+
+    // 처음 열릴 때, 정렬을 바꿀 때마다 다시 불러오기
+    useEffect(() => {
+        fetchItems();
+    }, [id, sortType]);
+
+    // 이동 모달에 보여줄 내 카테고리 목록
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get('/api/categories');
+                const data = res.data.data ?? res.data;
+                setCategories([
+                    { id: 0, name: '미분류' },
+                    ...data.categories.map((c) => ({ id: c.categoryId, name: c.categoryName })),
+                ]);
+            } catch (e) {
+                console.log('카테고리 목록 실패', e.response?.status, e.response?.data);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const handleSelectItem = (itemId) => {
         if (!isSelectMode) return;
@@ -44,49 +103,108 @@ function CategoryDetail() {
         setIsSelectMode(!isSelectMode);
         setSelectedIds([]);
     };
-
-    const handleDeleteItems = () => {
-        setItems(items.filter((item) => !selectedIds.includes(item.id)));
-        setSelectedIds([]);
-        setIsSelectMode(false);
-        setActiveModal(null);
+    const goAdd = () => {
+        setHeaderMenuOpen(false);
+        navigate('/storage/add');
     };
 
-    const categories = [
-        { id: 0, name: '미분류' },
-        { id: 1, name: '카테고리 제목' },
-        { id: 2, name: '카테고리 제목' },
-        { id: 3, name: '카테고리 제목' },
-        { id: 4, name: '카테고리 제목' },
-    ];
-    const [targetCategory, setTargetCategory] = useState(categories[0]);
-
-    // 이동 핸들러
-    const handleMoveItems = () => {
-        alert(`선택한 항목이 '${targetCategory.name}' (으)로 이동되었습니다.`);
-        setSelectedIds([]);
-        setIsSelectMode(false);
-        setActiveModal(null);
+    const goSort = () => {
+        setHeaderMenuOpen(false);
+        navigate('/storage/sort');
     };
+    // 선택한 링크 삭제 (휴지통으로 이동)
+    const handleDeleteItems = async () => {
+        try {
+            await api.post('/api/bookmarks/delete', { bookmarkIds: selectedIds });
+            await fetchItems();
+        } catch (e) {
+            console.log('링크 삭제 실패', e.response?.status, e.response?.data);
+        } finally {
+            setSelectedIds([]);
+            setIsSelectMode(false);
+            setActiveModal(null);
+        }
+    };
+
+    // 선택한 링크 다른 카테고리로 이동
+    const handleMoveItems = async () => {
+        try {
+            await api.patch('/api/bookmarks/category', {
+                bookmarkIds: selectedIds,
+                categoryId: targetCategory.id === 0 ? null : targetCategory.id,
+            });
+            await fetchItems();
+        } catch (e) {
+            console.log('링크 이동 실패', e.response?.status, e.response?.data);
+        } finally {
+            setSelectedIds([]);
+            setIsSelectMode(false);
+            setActiveModal(null);
+        }
+    };
+
+    // 카테고리 이름 수정
+    const handleRenameCategory = async () => {
+        setHeaderMenuOpen(false);
+        const next = window.prompt('카테고리 이름을 입력하세요', name);
+        if (!next || !next.trim()) return;
+
+        try {
+            await api.patch(`/api/categories/${id}`, { categoryName: next.trim() });
+            setName(next.trim());
+        } catch (e) {
+            // 409 DUPLICATE_CATEGORY_NAME: 이름 중복
+            console.log('카테고리 수정 실패', e.response?.status, e.response?.data);
+        }
+    };
+
     return (
         <div className="category-detail-wrap">
             {/* 고정 헤더 */}
             <header className="detail-header">
-                <div className="header-left">
-                    <button className="back-btn" onClick={() => navigate(-1)} type="button">
-                        <img src={backIcon} alt="뒤로가기" />
-                    </button>
-                    <h1>{categoryName}</h1>
-                </div>
+                {!isSelectMode ? (
+                    <>
+                        <div className="header-left">
+                            <button className="back-btn" onClick={() => navigate(-1)} type="button">
+                                <img src={backIcon} alt="뒤로가기" />
+                            </button>
+                            <h1>{name}</h1>
+                        </div>
 
-                <div className="header-right">
-                    <button className="icon-btn" type="button" onClick={() => navigate('/storage/search')}>
-                        <img src={searchIcon} alt="검색" />
-                    </button>
-                    <button className="icon-btn" type="button">
-                        <img src={moreIcon} alt="더보기" />
-                    </button>
-                </div>
+                        <div className="header-right">
+                            <button
+                                className="icon-btn"
+                                type="button"
+                                onClick={() => navigate('/storage/search')}
+                            >
+                                <img src={searchIcon} alt="검색" />
+                            </button>
+
+                            <div className="header-more" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                    className="icon-btn"
+                                    type="button"
+                                    onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
+                                >
+                                    <img src={moreIcon} alt="더보기" />
+                                </button>
+                                {headerMenuOpen && (
+                                    <ul className="pop-menu header-menu">
+                                        <li onClick={goAdd}><img src={plus2} alt="" /> 카테고리 추가</li>
+                                        <li onClick={goSort}><img src={order} alt="" />순서 정렬</li>
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="header-left">
+                        <button className="back-btn" onClick={toggleSelectMode} type="button">
+                            <img src={backIcon} alt="선택 취소" />
+                        </button>
+                        <h1>{selectedIds.length}개 선택됨</h1>
+                    </div>
+                )}
             </header>
 
             {/* 메인 콘텐츠 영역 */}
@@ -113,7 +231,7 @@ function CategoryDetail() {
                             </div>
 
                             <div className="right-controls">
-                                <span className="total-count-text">총 {items.length}개</span>
+                                <span className="total-count-text">총 {totalCount}개</span>
                                 <button className="select-mode-btn" onClick={toggleSelectMode} type="button">
                                     <span><img src={select} alt="" /></span> 선택하기
                                 </button>
@@ -121,7 +239,6 @@ function CategoryDetail() {
                         </div>
                     ) : (
                         <div className="selecting-bar">
-                            <span className="selected-count-text">{selectedIds.length}개 선택됨</span>
                             <div className="select-actions">
                                 <button
                                     className={`action-btn move ${selectedIds.length === 0 ? 'disabled' : ''}`}
@@ -151,7 +268,6 @@ function CategoryDetail() {
                                 className={`detail-card ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
                                 key={item.id}
                                 style={{ cursor: 'pointer' }}
-                                // 선택 모드에서는 선택, 아니면 링크 상세로 이동
                                 onClick={() =>
                                     isSelectMode ? handleSelectItem(item.id) : navigate(`/link/${item.id}`)
                                 }
@@ -208,7 +324,7 @@ function CategoryDetail() {
                         <button className="submit-action-btn" onClick={handleMoveItems} type="button">
                             이동하기
                         </button>
-                        <p className='enter' type='button'>enter</p>
+                        <p className="enter" type="button">enter</p>
                     </div>
                 </div>
             )}
