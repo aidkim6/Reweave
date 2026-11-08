@@ -1,13 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './mypage.scss';
 import arrow from '../../assets/mypage/arrow.svg';
+import { api } from '../../features/client';
 
 function MyPage() {
+    const navigate = useNavigate();
     const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+    const [me, setMe] = useState(null);
 
-    const handleLogout = () => {
-        // 여기에 실제 로그아웃 처리 (토큰 삭제, 페이지 이동 등)
-        setIsLogoutOpen(false);
+    // 화면이 처음 열릴 때 내 정보를 서버에서 가져와요
+    useEffect(() => {
+        api
+            .get('/api/users/me')
+            .then((res) => setMe(res.data.data ?? res.data))
+            .catch((e) => {
+                console.log('내 정보 실패', e.response?.status, e.response?.data);
+            });
+    }, []);
+
+    const handleLogout = async () => {
+        try {
+            await api.post('/api/auth/logout', { clientType: 'WEB' });
+        } catch (e) {
+            console.log('로그아웃 실패', e.response?.status, e.response?.data);
+        } finally {
+            // 서버 응답과 상관없이 내 브라우저의 토큰은 지우고 로그인 화면으로 이동
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            setIsLogoutOpen(false);
+            navigate('/login');
+        }
     };
 
     return (
@@ -15,12 +38,12 @@ function MyPage() {
             <div className="mypage-title">
                 <h1>마이페이지</h1>
             </div>
-            <h1 className="mypage-nickname">닉네임</h1>
+            <h1 className="mypage-nickname">{me?.nickname ?? ''}</h1>
 
             <div className="info-card">
                 <div className="info-row">
                     <span className="info-label">이메일</span>
-                    <span className="info-value">20240906@sungshin.ac.kr</span>
+                    <span className="info-value">{me?.email ?? ''}</span>
                 </div>
 
                 <div className="mypage-divider" />
