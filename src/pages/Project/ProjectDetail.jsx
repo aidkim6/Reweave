@@ -18,7 +18,6 @@ function ProjectDetail({ projectData, onClose }) {
     const { id } = useParams();
     const location = useLocation();
 
-    // 프로젝트 ID 및 이름 확보
     const purposeGroupId = projectData?.id || projectData?.purposeGroupId || id;
     const projectName = projectData?.title || projectData?.purposeName || location.state?.projectName || '진행 중인 프로젝트';
 
@@ -31,22 +30,24 @@ function ProjectDetail({ projectData, onClose }) {
     const [activeModal, setActiveModal] = useState(null);
 
     const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
-    const [sortType, setSortType] = useState('최신순'); // '최신순' / '오래된순'
+    const [sortType, setSortType] = useState('최신순');
+
+    const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
 
     const [categories, setCategories] = useState([{ id: 0, name: '미분류' }]);
     const [targetCategory, setTargetCategory] = useState({ id: 0, name: '미분류' });
 
-    // 이 프로젝트에 대해 AI 동기화를 이미 했는지 기억 (정렬만 바꿀 때 재호출 방지)
     const syncedGroupRef = useRef(null);
 
-    // 바깥을 누르면 정렬 드롭다운 닫기
     useEffect(() => {
-        const close = () => setSortDropdownOpen(false);
+        const close = () => {
+            setSortDropdownOpen(false);
+            setIsHeaderMenuOpen(false);
+        };
         window.addEventListener('click', close);
         return () => window.removeEventListener('click', close);
     }, []);
 
-    // 목록 조회 (size를 API 허용 범위인 20으로 안전하게 설정)
     const loadList = async (size = 20) => {
         const sort = sortType === '최신순' ? 'latest' : 'oldest';
         const res = await api.get(`/api/purpose-groups/${purposeGroupId}/bookmarks`, {
@@ -57,7 +58,6 @@ function ProjectDetail({ projectData, onClose }) {
         return { data, rawBookmarks };
     };
 
-    // 목록 조회 후 화면 반영
     const showList = async () => {
         const { data, rawBookmarks } = await loadList(20);
         setItems(
@@ -70,15 +70,12 @@ function ProjectDetail({ projectData, onClose }) {
         setTotalCount(data.totalElements ?? rawBookmarks.length);
     };
 
-    // AI로 새 링크를 찾아 프로젝트에 추가. 추가된 게 있으면 true
     const syncWithAi = async () => {
         try {
-            // 1) props로 넘어온 projectData가 있다면 그것을 우선 활용
             let categoryIds = projectData?.categories 
                 ? projectData.categories.map((c) => c.categoryId || c.id) 
                 : [];
 
-            // props에 없다면 API로 조회
             if (categoryIds.length === 0) {
                 const detailRes = await api.get(`/api/purpose-groups/${purposeGroupId}`);
                 const detail = detailRes.data.data ?? detailRes.data;
@@ -91,11 +88,9 @@ function ProjectDetail({ projectData, onClose }) {
 
             if (categoryIds.length === 0) return false;
 
-            // 2) 이미 연결된 링크 ID 전체 (size 범위를 API 제한인 20으로 맞춤)
             const { rawBookmarks: existing } = await loadList(20);
             const existingIds = new Set(existing.map((b) => b.bookmarkId));
 
-            // 3) AI 추천 (응답: { matchedBookmarkIds, reason })
             const recommendRes = await api.post('/api/ai/recommend', {
                 purposeTitle: projectData?.title || projectName,
                 categoryIds,
@@ -103,7 +98,6 @@ function ProjectDetail({ projectData, onClose }) {
             const rec = recommendRes.data.data ?? recommendRes.data;
             const matchedIds = rec.matchedBookmarkIds || [];
 
-            // 4) 아직 없는 링크만 추가
             const newIds = matchedIds.filter((bid) => !existingIds.has(bid));
             if (newIds.length === 0) return false;
 
@@ -121,7 +115,6 @@ function ProjectDetail({ projectData, onClose }) {
         }
     };
 
-    // withAi가 true일 때만 AI 동기화 (삭제/이동/정렬 변경 후에는 false)
     const fetchProjectBookmarks = async (withAi = false) => {
         if (!purposeGroupId) return;
 
@@ -147,12 +140,10 @@ function ProjectDetail({ projectData, onClose }) {
     };
 
     useEffect(() => {
-        // 프로젝트를 처음 열 때만 AI 동기화, 정렬만 바꿀 땐 목록만 다시 조회
         const needAi = syncedGroupRef.current !== purposeGroupId;
         syncedGroupRef.current = purposeGroupId;
         fetchProjectBookmarks(needAi);
 
-        // 새 링크를 저장했을 때는 항상 AI 동기화
         const handleBookmarkSaved = () => {
             fetchProjectBookmarks(true);
         };
@@ -163,7 +154,6 @@ function ProjectDetail({ projectData, onClose }) {
         };
     }, [purposeGroupId, sortType]);
 
-    // 이동 모달에 보여줄 내 카테고리 목록 불러오기
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -190,9 +180,9 @@ function ProjectDetail({ projectData, onClose }) {
     const toggleSelectMode = () => {
         setIsSelectMode(!isSelectMode);
         setSelectedIds([]);
+        setIsHeaderMenuOpen(false);
     };
 
-    // 목적 그룹 내 북마크 삭제 연동
     const handleDeleteItems = async () => {
         if (selectedIds.length === 0) return;
 
@@ -210,7 +200,6 @@ function ProjectDetail({ projectData, onClose }) {
         }
     };
 
-    // 목적 그룹 내 북마크 이동 연동 (백엔드가 PUT이라 api.put 사용)
     const handleMoveItems = async () => {
         if (selectedIds.length === 0) return;
 
@@ -238,8 +227,13 @@ function ProjectDetail({ projectData, onClose }) {
     };
 
     return (
-        <div className="project-detail-wrap">
-            {/* 고정 헤더 */}
+        <div
+            className="project-detail-wrap"
+            onClick={() => {
+                setSortDropdownOpen(false);
+                setIsHeaderMenuOpen(false);
+            }}
+        >
             <header className="detail-header">
                 {!isSelectMode ? (
                     <>
@@ -254,9 +248,63 @@ function ProjectDetail({ projectData, onClose }) {
                             <button className="icon-btn" type="button" onClick={() => navigate('/storage/search')}>
                                 <img src={searchIcon} alt="검색" />
                             </button>
-                            <button className="icon-btn" type="button">
-                                <img src={moreIcon} alt="더보기" />
-                            </button>
+
+                            <div className="header-more-wrapper" style={{ position: 'relative' }}>
+                                <button
+                                    className="icon-btn"
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsHeaderMenuOpen(!isHeaderMenuOpen);
+                                        setSortDropdownOpen(false);
+                                    }}
+                                >
+                                    <img src={moreIcon} alt="더보기" />
+                                </button>
+
+                                {isHeaderMenuOpen && (
+                                    <div
+                                        className="header-action-popover"
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '36px',
+                                            right: '0',
+                                            zIndex: '30',
+                                            display: 'flex',
+                                            padding: '6px',
+                                            flexDirection: 'column',
+                                            alignItems: 'flex-start',
+                                            borderRadius: '12px',
+                                            border: '1px solid rgba(43, 45, 43, 0.50)',
+                                            background: '#2B2D2B',
+                                            boxShadow: '0px 4px 15px 0px rgba(0, 0, 0, 0.25)',
+                                            whiteSpace: 'nowrap',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    >
+                                        <button
+                                            className="header-action-item"
+                                            onClick={toggleSelectMode}
+                                            type="button"
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                padding: '8px 12px',
+                                                width: '100%',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                boxSizing: 'border-box'
+                                            }}
+                                        >
+                                            <img src={select} alt="선택하기" style={{ width: '18px', height: '18px' }} />
+                                            <span style={{ color: '#FFF', fontSize: '14px', fontWeight: '500' }}>선택하기</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </>
                 ) : (
@@ -269,9 +317,7 @@ function ProjectDetail({ projectData, onClose }) {
                 )}
             </header>
 
-            {/* 메인 콘텐츠 영역 */}
             <main className="detail-main">
-                {/* 상단 컨트롤 바 */}
                 <div className="sticky-action-bar">
                     {!isSelectMode ? (
                         <div className="normal-bar">
@@ -310,9 +356,6 @@ function ProjectDetail({ projectData, onClose }) {
 
                             <div className="right-controls">
                                 <span className="total-count-text">총 {totalCount}개</span>
-                                <button className="select-mode-btn" onClick={toggleSelectMode} type="button">
-                                    <span><img src={select} alt="" /></span> 선택하기
-                                </button>
                             </div>
                         </div>
                     ) : (
@@ -337,7 +380,6 @@ function ProjectDetail({ projectData, onClose }) {
                     )}
                 </div>
 
-                {/* 아이템 그리드 */}
                 <div className="item-grid">
                     {isLoading ? (
                         <div style={{ color: '#929292', textAlign: 'center', gridColumn: 'span 2', padding: '40px 0' }}>
@@ -381,7 +423,6 @@ function ProjectDetail({ projectData, onClose }) {
                 </div>
             </main>
 
-            {/* 모달 영역 (이동 / 삭제) */}
             {activeModal === 'move' && (
                 <div className="modal-overlay-detail" onClick={() => setActiveModal(null)}>
                     <div className="modal-content move-modal" onClick={(e) => e.stopPropagation()}>

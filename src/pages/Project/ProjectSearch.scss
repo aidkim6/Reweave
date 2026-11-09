@@ -1,6 +1,20 @@
+
 @import '../../styles/main.scss';
 
 $thumb-bg: #262927;
+
+
+html,
+body,
+#root,
+#app,
+.App {
+    background-color: #1D1F1E !important;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+}
 
 .project-search-wrap {
     width: 768px;
@@ -10,6 +24,7 @@ $thumb-bg: #262927;
     padding-top: 42px;
     box-sizing: border-box;
     margin: 0 auto;
+    background-color: #1D1F1E !important;
 
     .search-header {
         display: flex;

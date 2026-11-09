@@ -8,7 +8,7 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
   const isEdit = mode === 'edit';
 
   const [title, setTitle] = useState('');
-  // 기본 안전장치 목록을 먼저 넣어두어 에러가 나도 화면이 뜨게 설정
+
   const [availableCategories, setAvailableCategories] = useState([
     { categoryId: 1, categoryName: '청소' },
     { categoryId: 2, categoryName: '여행' },
@@ -43,7 +43,7 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
   const isValid = title.trim().length > 0 && selectedCategories.length > 0 && status !== null;
   const isDirty = title.trim().length > 0 || selectedCategories.length > 0 || status !== null;
 
-  // 1. 서버에서 내 카테고리 목록 가져오기 (실패 시 기본 목록 유지)
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -72,12 +72,12 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
     fetchCategories();
   }, []);
 
-  // 2. 수정 모드일 때 초기 데이터 세팅
+
   useEffect(() => {
     if (isEdit && projectData) {
       setTitle(projectData.purposeName || projectData.title || '');
       
-      // 서버에서 온 categories 객체 배열이거나 categoryIds인 경우 모두 대응
+
       if (projectData.categoryIds) {
         setSelectedCategories(projectData.categoryIds);
       } else if (projectData.categories) {
