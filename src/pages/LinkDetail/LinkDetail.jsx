@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './LinkDetail.scss';
+import { api } from '../../features/client';
 
 import backIcon from '../../assets/link-detail/back.svg';
 import moreIcon from '../../assets/link-detail/more.svg';
@@ -16,49 +17,85 @@ import plusIcon from '../../assets/link-detail/plus.svg';
 import closeIcon from '../../assets/link-detail/close.svg';
 import toastCheckIcon from '../../assets/link-detail/toast-check.svg';
 
-// TODO: 백엔드 연결 시 GET /api/bookmarks/{id} 응답으로 교체
-// (bookmarkId, url, domain, title, thumbnailUrl, memo, summary, categoryId, categoryName, createdDate)
-const SAMPLE_LINK = {
-  title: '삐삐 | 하루 한 번, 가족에게 보내는 생존신고 서비스 Family Widget Service',
-  url: 'https://www.behance.net/gallery/191508405/-Family-Widget-Service',
-  domain: 'behance.net',
-  thumbnailUrl: null,
-  categoryName: '디자인',
-  createdDate: '2026.09.18',
-  summary:
-    '가족과 자주 연락하지 못하는 문제를 해결하기 위해, 하루 한 번 위젯으로 자신의 상태와 일상을 간단히 공유하는 가족 소통 서비스 ‘삐삐’의 UX/UI 프로젝트다. 일상 속 문제 발견부터 서비스 콘셉트, 핵심 기능, UI 디자인까지 이어지는 포트폴리오 구성 방식을 참고할 수 있다.',
-  memo: '피피티디자인, 인터뷰를 통한 인사이트 도출 방식\n캐릭터 디자인 참고하기',
-};
-
-// TODO: 백엔드 연결 시 GET /api/categories 응답으로 교체
-const SAMPLE_CATEGORIES = [
-  { id: 0, name: '미분류' },
-  { id: 1, name: '디자인' },
-  { id: 2, name: '취업' },
-  { id: 3, name: '여행' },
-  { id: 4, name: '쇼핑' },
-  { id: 5, name: '맛집' },
-];
-
-// TODO: 백엔드 연결 시 실제 프로젝트 목록으로 교체
-const SAMPLE_PROJECTS = [
-  { id: 1, status: '진행 중', done: false, title: '성신멋사데모데이', tags: '#작업 #디자인' },
-  { id: 2, status: '완료', done: true, title: 'UIUX 포트폴리오 만들기', tags: '#취업 #디자인' },
-];
-
 const TOAST_DURATION = 3000;
+
+// 서버의 "2026-09-18T15:54:00" → "2026.09.18"
+const formatDate = (iso) => (iso ? iso.slice(0, 10).replaceAll('-', '.') : '');
+
+// 서버 status → 화면 표시
+const STATUS_LABEL = { NOT_STARTED: '시작 전', IN_PROGRESS: '진행 중', COMPLETED: '완료' };
 
 const LinkDetail = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // 링크 번호 (백엔드 연결 시 사용)
+  const { id } = useParams();
 
-  const [link, setLink] = useState(SAMPLE_LINK);
+  const [link, setLink] = useState(null);
+  const [categories, setCategories] = useState([{ id: 0, name: '미분류' }]);
+  const [projects, setProjects] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState(null); // 'move' | 'delete' | null
   const [targetCategoryId, setTargetCategoryId] = useState(null);
-  const [toast, setToast] = useState(null); // { message, action? }
+  const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
   const menuRef = useRef(null);
+
+  // 링크 상세 불러오기
+  const fetchLink = async () => {
+    try {
+      const res = await api.get(`/api/bookmarks/${id}`);
+      const data = res.data.data ?? res.data;
+      setLink({
+        ...data,
+        createdDate: formatDate(data.createdDate),
+      });
+    } catch (e) {
+      // 404 BOOKMARK_NOT_FOUND: 없거나 내 북마크가 아님
+      console.log('링크 상세 실패', e.response?.status, e.response?.data);
+    }
+  };
+
+  useEffect(() => {
+    fetchLink();
+  }, [id]);
+
+  // 이동 모달용 카테고리 목록
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/api/categories');
+        const data = res.data.data ?? res.data;
+        setCategories([
+          { id: 0, name: '미분류' },
+          ...data.categories.map((c) => ({ id: c.categoryId, name: c.categoryName })),
+        ]);
+      } catch (e) {
+        console.log('카테고리 목록 실패', e.response?.status, e.response?.data);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // 이 링크가 담겨 있는 프로젝트(목적 그룹)
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await api.get('/api/purpose-groups', { params: { bookmarkId: id } });
+        const data = res.data.data ?? res.data;
+        setProjects(
+          (Array.isArray(data) ? data : []).map((p) => ({
+            id: p.purposeGroupId,
+            status: STATUS_LABEL[p.status] ?? p.status,
+            done: p.status === 'COMPLETED',
+            title: p.purposeName,
+            tags: (p.categories ?? []).map((c) => `#${c.categoryName}`).join(' '),
+          }))
+        );
+      } catch (e) {
+        console.log('프로젝트 목록 실패', e.response?.status, e.response?.data);
+      }
+    };
+    fetchProjects();
+  }, [id]);
 
   // 메뉴 바깥을 누르면 닫기
   useEffect(() => {
@@ -88,10 +125,16 @@ const LinkDetail = () => {
     }
   };
 
+  // 원문 링크를 열 때 열람 기록 (조회수 +1)
+  const handleOpenOriginal = () => {
+    api.post(`/api/bookmarks/${id}/view`).catch((e) => {
+      console.log('열람 기록 실패', e.response?.status, e.response?.data);
+    });
+  };
+
   const openMoveModal = () => {
     setMenuOpen(false);
-    const current = SAMPLE_CATEGORIES.find((c) => c.name === link.categoryName);
-    setTargetCategoryId(current ? current.id : 0);
+    setTargetCategoryId(link?.categoryId ?? 0);
     setModal('move');
   };
 
@@ -100,20 +143,29 @@ const LinkDetail = () => {
     setModal('delete');
   };
 
-  const handleMove = () => {
-    const target = SAMPLE_CATEGORIES.find((c) => c.id === targetCategoryId);
+  const handleMove = async () => {
+    const target = categories.find((c) => c.id === targetCategoryId);
     if (!target) return;
-    // TODO: PATCH /api/bookmarks/{id} { categoryId }
-    setLink((prev) => ({ ...prev, categoryName: target.name }));
-    setModal(null);
-    showToast(`링크를 ${target.name}으로 이동했습니다.`, {
-      label: '보기',
-      onClick: () =>
-        navigate(`/storage/detail/${target.id}`, { state: { categoryName: target.name } }),
-    });
+    try {
+      // 미분류(0)는 null로 보내요. 400이 나면 백엔드 담당자에게 확인이 필요해요.
+      await api.patch(`/api/bookmarks/${id}`, {
+        categoryId: target.id === 0 ? null : target.id,
+      });
+      await fetchLink();
+      setModal(null);
+      showToast(`링크를 ${target.name}으로 이동했습니다.`, {
+        label: '보기',
+        onClick: () =>
+          navigate(`/storage/detail/${target.id}`, { state: { categoryName: target.name } }),
+      });
+    } catch (e) {
+      console.log('링크 이동 실패', e.response?.status, e.response?.data);
+      setModal(null);
+      showToast('링크를 이동하지 못했습니다');
+    }
   };
 
-  // 이동 창에서 Enter 를 누르면 이동하기 (웹 시안의 'enter' 안내). 버튼에 포커스가 있을 땐 그 버튼의 동작을 따라요.
+  // 이동 창에서 Enter 를 누르면 이동하기
   useEffect(() => {
     if (modal !== 'move') return undefined;
     const handleEnter = (e) => {
@@ -123,11 +175,21 @@ const LinkDetail = () => {
     return () => document.removeEventListener('keydown', handleEnter);
   });
 
-  const handleDelete = () => {
-    // TODO: DELETE /api/bookmarks/{id}
-    setModal(null);
-    navigate(-1);
+  // 삭제 (휴지통으로 이동)
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/api/bookmarks/${id}`);
+      setModal(null);
+      navigate(-1);
+    } catch (e) {
+      console.log('링크 삭제 실패', e.response?.status, e.response?.data);
+      setModal(null);
+      showToast('링크를 삭제하지 못했습니다');
+    }
   };
+
+  // 데이터가 오기 전에는 빈 화면
+  if (!link) return <div className="link-detail" />;
 
   return (
     <div className="link-detail">
@@ -198,7 +260,7 @@ const LinkDetail = () => {
         <div className="link-meta">
           <span className="link-meta-item">
             <img src={linkIcon} alt="" />
-            <a href={link.url} target="_blank" rel="noreferrer">
+            <a href={link.url} target="_blank" rel="noreferrer" onClick={handleOpenOriginal}>
               {link.domain}
             </a>
           </span>
@@ -227,7 +289,7 @@ const LinkDetail = () => {
       <section className="link-projects">
         <h2>저장된 프로젝트</h2>
         <ul>
-          {SAMPLE_PROJECTS.map((project) => (
+          {projects.map((project) => (
             <li key={project.id}>
               <button type="button" className="link-project-card">
                 <span className="link-project-body">
@@ -268,7 +330,7 @@ const LinkDetail = () => {
               </button>
             </div>
             <ul className="link-sheet-list">
-              {SAMPLE_CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <li key={category.id}>
                   <button
                     type="button"
