@@ -8,30 +8,91 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
   const isEdit = mode === 'edit';
 
   const [title, setTitle] = useState('');
+  // 기본 안전장치 목록을 먼저 넣어두어 에러가 나도 화면이 뜨게 설정
+  const [availableCategories, setAvailableCategories] = useState([
+    { categoryId: 1, categoryName: '청소' },
+    { categoryId: 2, categoryName: '여행' },
+    { categoryId: 3, categoryName: '쇼핑' },
+    { categoryId: 4, categoryName: '맛집' },
+    { categoryId: 5, categoryName: '디자인' },
+    { categoryId: 6, categoryName: '취업준비' },
+    { categoryId: 7, categoryName: '포트폴리오' },
+    { categoryId: 8, categoryName: '뜨개질' },
+    { categoryId: 9, categoryName: '요리' },
+  ]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [status, setStatus] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [showExitModal, setShowExitModal] = useState(false);
 
-  const availableCategories = ['청소', '여행', '쇼핑', '맛집', '디자인', '취업준비', '포트폴리오', '뜨개질', '요리'];
   const availableStatuses = ['시작 전', '진행 중', '완료'];
+
+  const statusToApi = {
+    '시작 전': 'NOT_STARTED',
+    '진행 중': 'IN_PROGRESS',
+    '완료': 'COMPLETED'
+  };
+
+  const statusFromApi = {
+    'NOT_STARTED': '시작 전',
+    'IN_PROGRESS': '진행 중',
+    'COMPLETED': '완료'
+  };
 
   const isValid = title.trim().length > 0 && selectedCategories.length > 0 && status !== null;
   const isDirty = title.trim().length > 0 || selectedCategories.length > 0 || status !== null;
 
+  // 1. 서버에서 내 카테고리 목록 가져오기 (실패 시 기본 목록 유지)
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch('/api/categories', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        });
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        const categoriesData = result.data?.categories || result.data || result;
+        
+        if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+          setAvailableCategories(categoriesData);
+        }
+      } catch (error) {
+        console.error('카테고리 조회 에러 (기본 목록 유지):', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // 2. 수정 모드일 때 초기 데이터 세팅
   useEffect(() => {
     if (isEdit && projectData) {
-      setTitle(projectData.title || '');
-      setSelectedCategories(projectData.categories || ['여행', '쇼핑']);
-      setStatus(projectData.status || '진행 중');
+      setTitle(projectData.purposeName || projectData.title || '');
+      
+      // 서버에서 온 categories 객체 배열이거나 categoryIds인 경우 모두 대응
+      if (projectData.categoryIds) {
+        setSelectedCategories(projectData.categoryIds);
+      } else if (projectData.categories) {
+        setSelectedCategories(projectData.categories.map(c => c.categoryId || c.id));
+      }
+
+      setStatus(statusFromApi[projectData.status] || projectData.status || '진행 중');
     }
   }, [isEdit, projectData]);
 
-  const handleCategoryToggle = (catName) => {
-    if (selectedCategories.includes(catName)) {
-      setSelectedCategories(selectedCategories.filter((c) => c !== catName));
+  const handleCategoryToggle = (catId) => {
+    if (selectedCategories.includes(catId)) {
+      setSelectedCategories(selectedCategories.filter((id) => id !== catId));
     } else {
-      setSelectedCategories([...selectedCategories, catName]);
+      setSelectedCategories([...selectedCategories, catId]);
     }
   };
 
@@ -55,14 +116,50 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
     }
   };
 
-  const handleSubmit = () => {
-    if (!isValid) return;
-    onSubmit({
-      id: projectData?.id,
-      title,
-      categories: selectedCategories,
-      status,
-    });
+  const handleSubmit = async () => {
+    if (!isValid || isLoading) return;
+
+    try {
+      setIsLoading(true);
+
+      const requestBody = {
+        purposeName: title,
+        status: statusToApi[status] || 'IN_PROGRESS',
+        categoryIds: selectedCategories,
+      };
+
+      const token = localStorage.getItem('accessToken');
+      const url = isEdit 
+        ? `/api/purpose-groups/${projectData.purposeGroupId || projectData.id}` 
+        : `/api/purpose-groups`;
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error('프로젝트 저장에 실패했습니다.');
+      }
+
+      const result = await response.json();
+
+      if (onSubmit) {
+        onSubmit(result.data || result);
+      } else {
+        onClose();
+      }
+    } catch (error) {
+      console.error('API 연동 에러:', error);
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -75,12 +172,12 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
           <h1>{isEdit ? '프로젝트 수정하기' : '새 프로젝트 만들기'}</h1>
         </div>
         <button
-          className={`submit-btn ${isValid ? 'active' : ''}`}
+          className={`submit-btn ${isValid && !isLoading ? 'active' : ''}`}
           onClick={handleSubmit}
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || isLoading}
         >
-          완료
+          {isLoading ? '저장 중...' : '완료'}
         </button>
       </header>
 
@@ -106,14 +203,17 @@ const ProjectForm = ({ mode = 'create', projectData = null, onClose, onSubmit })
         <section className="form-section category-section">
           <label className="section-label">참조할 카테고리 선택</label>
           <div className="category-chip-grid">
-            {availableCategories.map((catName) => {
-              const isSelected = selectedCategories.includes(catName);
+            {availableCategories.map((cat) => {
+              const catId = cat.categoryId || cat.id;
+              const catName = cat.categoryName || cat.name;
+              const isSelected = selectedCategories.includes(catId);
+              
               return (
                 <button
-                  key={catName}
+                  key={catId}
                   type="button"
                   className={`form-category-chip ${isSelected ? 'selected' : ''}`}
-                  onClick={() => handleCategoryToggle(catName)}
+                  onClick={() => handleCategoryToggle(catId)}
                 >
                   {catName}
                 </button>

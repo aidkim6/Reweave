@@ -1,33 +1,33 @@
-import React, { useState } from 'react';
-import './Project.scss';
-
-import ProjectForm from './ProjectForm';
-import ProjectSort from './ProjectSort';
-import ProjectDetail from './ProjectDetail';
-
-// Assets
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import searchIcon from '../../assets/project/search.svg';
 import moreRIcon from '../../assets/project/more_r.svg';
 import upIcon from '../../assets/project/up.svg';
 import downIcon from '../../assets/project/down.svg';
 import checkIcon from '../../assets/project/check.svg';
 import moreCIcon from '../../assets/project/more_c.svg';
-import markIcon from '../../assets/project/mark.svg';
+import markIcon from '../../assets/icon.svg';
 import editIcon from '../../assets/project/edit.svg';
 import deleteIcon from '../../assets/project/delete.svg';
 import addIcon from '../../assets/project/add.svg';
 import sortIcon from '../../assets/project/sort.svg';
 
+import ProjectForm from './ProjectForm';
+import ProjectSort from './ProjectSort';
+import ProjectDetail from './ProjectDetail';
+
+import './Project.scss';
+
 const Project = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [viewMode, setViewMode] = useState('list');
   const [editingProject, setEditingProject] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
 
   const [categories, setCategories] = useState([
-    { id: 1, name: '전체', selected: true },
-    { id: 2, name: '카테고리 명', selected: false },
-    { id: 3, name: '카테고리 명', selected: false },
-    { id: 4, name: '카테고리 명', selected: false },
+    { id: 'all', name: '전체', selected: true },
   ]);
 
   const [statusFilter, setStatusFilter] = useState('전체');
@@ -37,63 +37,154 @@ const Project = () => {
 
   const filterOptions = ['전체', '시작 전', '진행 중', '완료'];
 
-  const [projectList, setProjectList] = useState([
-    {
-      id: 1,
-      title: '프로젝트 제목',
-      tags: ['#카테고리1', '#카테고리2'],
-      status: '시작 전',
-      statusClass: 'before-start',
-    },
-    {
-      id: 2,
-      title: '엄마랑 일본여행',
-      tags: ['#여행', '#쇼핑'],
-      status: '진행 중',
-      statusClass: 'in-progress',
-    },
-    {
-      id: 3,
-      title: '프로젝트 제목',
-      tags: ['#카테고리1', '#카테고리2'],
-      status: '완료',
-      statusClass: 'completed',
-    },
-    {
-      id: 4,
-      title: '프로젝트 제목',
-      tags: ['#카테고리1', '#카테고리2'],
-      status: '진행 중',
-      statusClass: 'in-progress',
-    },
-  ]);
+  const statusToApi = {
+    '시작 전': 'NOT_STARTED',
+    '진행 중': 'IN_PROGRESS',
+    '완료': 'COMPLETED'
+  };
+
+  const statusFromApi = {
+    'NOT_STARTED': { text: '시작 전', class: 'before-start' },
+    'IN_PROGRESS': { text: '진행 중', class: 'in-progress' },
+    'COMPLETED': { text: '완료', class: 'completed' }
+  };
+
+  const [rawProjectList, setRawProjectList] = useState([]);
+  const [projectList, setProjectList] = useState([]);
+
+  const fetchProjects = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      
+      let queryUrl = '/api/purpose-groups';
+      if (statusFilter !== '전체') {
+        queryUrl += `?status=${statusToApi[statusFilter]}`;
+      }
+
+      const response = await fetch(queryUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+
+      if (!response.ok) throw new Error('프로젝트 목록을 불러오지 못했습니다.');
+
+      const result = await response.json();
+      const rawData = result.data || [];
+
+      const formattedList = rawData.map((item) => {
+        const mappedStatus = statusFromApi[item.status] || { text: '진행 중', class: 'in-progress' };
+        const tags = item.categories ? item.categories.map((c) => `#${c.categoryName || c.name}`) : [];
+
+        return {
+          id: item.purposeGroupId,
+          title: item.purposeName,
+          tags: tags.length > 0 ? tags : ['#일반'],
+          status: mappedStatus.text,
+          statusClass: mappedStatus.class,
+          rawStatus: item.status,
+          categories: item.categories || [],
+          thumbnails: item.thumbnails || [],
+          bookmarkCount: item.bookmarkCount || 0,
+        };
+      });
+
+      setRawProjectList(formattedList);
+
+      const extractedCategoriesMap = new Map();
+      formattedList.forEach((item) => {
+        if (item.categories && Array.isArray(item.categories)) {
+          item.categories.forEach((cat) => {
+            const catId = cat.categoryId || cat.id;
+            const catName = cat.categoryName || cat.name;
+            if (catId && catName) {
+              extractedCategoriesMap.set(catId, catName);
+            }
+          });
+        }
+      });
+
+      setCategories((prevCategories) => {
+        const currentSelectedIds = prevCategories
+          .filter((c) => c.selected && c.id !== 'all')
+          .map((c) => c.id);
+
+        const newCategoryList = [{ id: 'all', name: '전체', selected: currentSelectedIds.length === 0 }];
+
+        extractedCategoriesMap.forEach((name, id) => {
+          newCategoryList.push({
+            id: id,
+            name: name,
+            selected: currentSelectedIds.includes(id),
+          });
+        });
+
+        if (!newCategoryList.some((c) => c.selected)) {
+          newCategoryList[0].selected = true;
+        }
+
+        return newCategoryList;
+      });
+
+    } catch (error) {
+      console.error('프로젝트 조회 에러:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, [statusFilter]);
+
+  useEffect(() => {
+    const selectedCategoryIds = categories
+      .filter((cat) => cat.id !== 'all' && cat.selected)
+      .map((cat) => cat.id);
+
+    if (selectedCategoryIds.length === 0) {
+      setProjectList(rawProjectList);
+    } else {
+      const filtered = rawProjectList.filter((project) =>
+        project.categories.some((cat) => {
+          const catId = cat.categoryId || cat.id;
+          return selectedCategoryIds.includes(catId);
+        })
+      );
+      setProjectList(filtered);
+    }
+  }, [categories, rawProjectList]);
 
   const handleCategoryClick = (id) => {
     setCategories((prevCategories) => {
-      if (id === 1) {
-        return prevCategories.map((cat) => ({ ...cat, selected: cat.id === 1 }));
-      }
-      const updated = prevCategories.map((cat) => {
-        if (cat.id === 1) return { ...cat, selected: false };
-        if (cat.id === id) return { ...cat, selected: !cat.selected };
-        return cat;
-      });
-      const hasSelected = updated.some((cat) => cat.id !== 1 && cat.selected);
-      if (!hasSelected) {
-        return updated.map((cat) => ({ ...cat, selected: cat.id === 1 }));
+      let updated;
+      if (id === 'all') {
+        updated = prevCategories.map((cat) => ({ ...cat, selected: cat.id === 'all' }));
+      } else {
+        updated = prevCategories.map((cat) => {
+          if (cat.id === 'all') return { ...cat, selected: false };
+          if (cat.id === id) return { ...cat, selected: !cat.selected };
+          return cat;
+        });
+        const hasSelected = updated.some((cat) => cat.id !== 'all' && cat.selected);
+        if (!hasSelected) {
+          updated = updated.map((cat) => ({ ...cat, selected: cat.id === 'all' }));
+        }
       }
       return updated;
     });
   };
 
-  const handleFormSubmit = (formData) => {
-    console.log('폼 제출 데이터:', formData);
+  const handleFormSubmit = () => {
     setViewMode('list');
+    setEditingProject(null);
+    fetchProjects();
   };
 
   const handleSortSave = (updatedList) => {
     setProjectList(updatedList);
     setViewMode('list');
+    fetchProjects();
   };
 
   const handleCardClick = (project) => {
@@ -101,12 +192,38 @@ const Project = () => {
     setViewMode('detail');
   };
 
+  const handleDeleteProject = async (purposeGroupId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('정말 이 프로젝트를 삭제하시겠습니까?')) return;
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`/api/purpose-groups/${purposeGroupId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+
+      if (!response.ok) throw new Error('삭제에 실패했습니다.');
+
+      setOpenMoreId(null);
+      fetchProjects();
+    } catch (error) {
+      console.error('프로젝트 삭제 에러:', error);
+      alert(error.message);
+    }
+  };
+
   if (viewMode === 'create' || viewMode === 'edit') {
     return (
       <ProjectForm
         mode={viewMode}
         projectData={editingProject}
-        onClose={() => setViewMode('list')}
+        onClose={() => {
+          setViewMode('list');
+          setEditingProject(null);
+        }}
         onSubmit={handleFormSubmit}
       />
     );
@@ -121,7 +238,6 @@ const Project = () => {
       />
     );
   }
-
 
   if (viewMode === 'detail') {
     return (
@@ -143,7 +259,12 @@ const Project = () => {
       <header className="project-header">
         <h1>프로젝트</h1>
         <div className="header-icons">
-          <button className="icon-btn" type="button">
+          {/* 🔍 검색 버튼 클릭 시 프로젝트 검색 페이지로 이동 */}
+          <button 
+            className="icon-btn" 
+            type="button" 
+            onClick={() => navigate('/project/search')}
+          >
             <img src={searchIcon} alt="검색" />
           </button>
 
@@ -168,6 +289,7 @@ const Project = () => {
                 <button
                   className="header-action-item"
                   onClick={() => {
+                    setEditingProject(null);
                     setViewMode('create');
                     setIsHeaderMenuOpen(false);
                   }}
@@ -254,84 +376,97 @@ const Project = () => {
 
         <section className="project-grid-section">
           <div className="project-grid">
-            {projectList.map((item) => (
-              <div
-                key={item.id}
-                className="project-item-card"
-                onClick={() => handleCardClick(item)}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="thumbnail-box">
-                  <img src={markIcon} alt="마크" className="mark-icon" />
-                </div>
+            {projectList.length === 0 ? (
+              <div style={{ color: '#929292', textAlign: 'center', gridColumn: 'span 2', padding: '40px 0' }}>
+                해당 조건의 프로젝트가 없습니다.
+              </div>
+            ) : (
+              projectList.map((item) => (
+                <div
+                  key={item.id}
+                  className="project-item-card"
+                  onClick={() => handleCardClick(item)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="thumbnail-box thumb">
+                    {item.thumbnails && item.thumbnails.length > 0 ? (
+                      <div className={`thumb-grid thumb-${Math.min(item.thumbnails.length, 4)}`}>
+                        {item.thumbnails.slice(0, 4).map((src, i) => (
+                          <img key={i} src={src} alt="" className="thumb-img" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="default-thumb-box">
+                        <img src={markIcon} alt="기본 로고" className="default-logo-img" />
+                      </div>
+                    )}
+                  </div>
 
-                <div className="card-body">
-                  <div className="title-row">
-                    <span className="card-title">{item.title}</span>
-                    
-                    <div className="more-menu-wrapper">
-                      <button
-                        className="more-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMoreId(openMoreId === item.id ? null : item.id);
-                          setIsHeaderMenuOpen(false);
-                        }}
-                        type="button"
-                      >
-                        <img src={moreCIcon} alt="더보기" />
-                      </button>
-
-                      {openMoreId === item.id && (
-                        <div
-                          className="card-action-popover"
-                          onClick={(e) => e.stopPropagation()}
+                  <div className="card-body">
+                    <div className="title-row">
+                      <span className="card-title">{item.title}</span>
+                      
+                      <div className="more-menu-wrapper">
+                        <button
+                          className="more-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMoreId(openMoreId === item.id ? null : item.id);
+                            setIsHeaderMenuOpen(false);
+                          }}
+                          type="button"
                         >
-                          <button
-                            className="action-item edit-item"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingProject(item);
-                              setViewMode('edit');
-                              setOpenMoreId(null);
-                            }}
-                            type="button"
+                          <img src={moreCIcon} alt="더보기" />
+                        </button>
+
+                        {openMoreId === item.id && (
+                          <div
+                            className="card-action-popover"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <img src={editIcon} alt="수정하기" className="action-icon" />
-                            <span>수정하기</span>
-                          </button>
-                          <button
-                            className="action-item delete-item"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMoreId(null);
-                            }}
-                            type="button"
-                          >
-                            <img src={deleteIcon} alt="삭제하기" className="action-icon" />
-                            <span>삭제하기</span>
-                          </button>
-                        </div>
-                      )}
+                            <button
+                              className="action-item edit-item"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingProject(item);
+                                setViewMode('edit');
+                                setOpenMoreId(null);
+                              }}
+                              type="button"
+                            >
+                              <img src={editIcon} alt="수정하기" className="action-icon" />
+                              <span>수정하기</span>
+                            </button>
+                            <button
+                              className="action-item delete-item"
+                              onClick={(e) => handleDeleteProject(item.id, e)}
+                              type="button"
+                            >
+                              <img src={deleteIcon} alt="삭제하기" className="action-icon" />
+                              <span>삭제하기</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="tags-row">
+                      {item.tags.map((tag, idx) => (
+                        <span key={idx} className="tag-chip">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="status-row">
+                      <span className={`status-badge ${item.statusClass}`}>
+                        {item.status}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="tags-row">
-                    {item.tags.map((tag, idx) => (
-                      <span key={idx} className="tag-chip">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="status-row">
-                    <span className={`status-badge ${item.statusClass}`}>
-                      {item.status}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
       </main>

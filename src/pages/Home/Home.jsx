@@ -14,15 +14,21 @@ const Home = () => {
   const navigate = useNavigate();
   const [nickname, setNickname] = useState('사용자');
   const [recentLinks, setRecentLinks] = useState([]);
-  const openLink = (id) => navigate(`/link/${id}`);
+  const [projects, setProjects] = useState([]); // 👈 진행 중인 프로젝트 상태 추가
 
- 
+  const openLink = (id) => navigate(`/link/${id}`);
+  const openProjectDetail = (project) => {
+    // 프로젝트 클릭 시 상세 화면이나 프로젝트 관리 탭으로 이동할 수 있도록 연동
+    navigate('/project', { state: { selectedProject: project } });
+  };
+
   const fetchHomeData = async () => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
     const headers = { Authorization: `Bearer ${token}` };
 
+    // 1. 유저 정보 조회
     try {
       const userRes = await axios.get('/api/users/me', { headers });
       if (userRes.data && userRes.data.data && userRes.data.data.nickname) {
@@ -32,6 +38,7 @@ const Home = () => {
       console.error('유저 정보를 불러오지 못했습니다.', error);
     }
 
+    // 2. 최근 저장한 링크 조회
     try {
       const bookmarkRes = await axios.get('/api/bookmarks?size=4', { headers });
       if (bookmarkRes.data && bookmarkRes.data.data && bookmarkRes.data.data.bookmarks) {
@@ -40,11 +47,31 @@ const Home = () => {
     } catch (error) {
       console.error('최근 저장한 링크를 불러오지 못했습니다.', error);
     }
+
+    // 3. 진행 중인 프로젝트(목적 그룹) 목록 조회 (GET /api/purpose-groups?status=IN_PROGRESS)
+    try {
+      const projectRes = await axios.get('/api/purpose-groups?status=IN_PROGRESS', { headers });
+      const rawProjects = projectRes.data?.data || projectRes.data || [];
+
+      const formattedProjects = rawProjects.map((item) => {
+        const tags = item.categories ? item.categories.map((c) => `#${c.categoryName || c.name}`) : [];
+        return {
+          id: item.purposeGroupId || item.id,
+          title: item.purposeName || item.title,
+          tags: tags.length > 0 ? tags : ['#일반'],
+          status: item.status,
+          thumbnails: item.thumbnails || []
+        };
+      });
+
+      setProjects(formattedProjects);
+    } catch (error) {
+      console.error('진행 중인 프로젝트를 불러오지 못했습니다.', error);
+    }
   };
 
   useEffect(() => {
     fetchHomeData();
-
 
     const handleBookmarkSaved = () => {
       fetchHomeData();
@@ -84,12 +111,6 @@ const Home = () => {
       tag: '일본여행 계획',
       title: '일본 여행 전\n할 준비 체크',
     },
-  ];
-
-  const projects = [
-    { id: 1, title: '일본 여행 맛집 정리', tags: ['#여행', '#맛집'] },
-    { id: 2, title: 'UIUX 포트폴리오 만들기', tags: ['#취업', '#디자인'] },
-    { id: 3, title: 'UIUX 포트폴리오 만들기', tags: ['#취업', '#디자인'] },
   ];
 
   const handleScroll = (direction) => {
@@ -151,26 +172,38 @@ const Home = () => {
           </div>
         </section>
 
+        {/* 🔗 진행 중인 프로젝트 동적 연동 영역 */}
         <section className="section project-section">
           <div className="section-header">
             <h2>진행 중인 프로젝트</h2>
           </div>
           <div className="project-grid">
-            {projects.map((item) => (
-              <div key={item.id} className="project-card">
-                <div className="project-top">
-                  <span className="project-title">{item.title}</span>
-                  <img src={arrowRightIcon} alt="이동" className="arrow-icon" />
+            {projects.length > 0 ? (
+              projects.map((item) => (
+                <div 
+                  key={item.id} 
+                  className="project-card"
+                  onClick={() => openProjectDetail(item)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="project-top">
+                    <span className="project-title">{item.title}</span>
+                    <img src={arrowRightIcon} alt="이동" className="arrow-icon" />
+                  </div>
+                  <div className="project-tags">
+                    {item.tags.map((tag, idx) => (
+                      <span key={idx} className="tag-chip">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="project-tags">
-                  {item.tags.map((tag, idx) => (
-                    <span key={idx} className="tag-chip">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p style={{ color: '#8E8E8E', fontSize: '14px', gridColumn: 'span 2' }}>
+                진행 중인 프로젝트가 없어요.
+              </p>
+            )}
           </div>
         </section>
 
