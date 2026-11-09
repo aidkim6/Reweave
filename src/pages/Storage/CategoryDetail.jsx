@@ -9,18 +9,19 @@ import defaulticon from '../../assets/icon.svg';
 import check from '../../assets/storage/check-mark.svg';
 import plus from '../../assets/plus.svg';
 import check1 from '../../assets/storage/check.svg';
-import plus2 from '../../assets/storage/plus.svg';
-import order from '../../assets/storage/order.svg';
 import { api } from '../../features/client';
+import sortCheck from '../../assets/storage/check-white.svg';
 import './CategoryDetail.scss';
 
 function CategoryDetail() {
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { id, type } = useParams();   // 내 카테고리면 id, 기본 카테고리면 type
+    const isDefault = !!type;           // 기본 카테고리 화면인지
+    const isTrash = type === 'trash';
+    const defaultNames = { all: '전체', uncategorized: '미분류', trash: '최근 삭제된 링크' };
     const location = useLocation();
 
-    const [name, setName] = useState(location.state?.categoryName || '');
-
+    const [name, setName] = useState(location.state?.categoryName || defaultNames[type] || '');
     const [items, setItems] = useState([]);
     const [totalCount, setTotalCount] = useState(0);
 
@@ -48,14 +49,15 @@ function CategoryDetail() {
     // 이 카테고리의 링크 목록 불러오기
     const fetchItems = async () => {
         try {
-            const res = await api.get('/api/bookmarks', {
-                params: {
-                    categoryId: id,
-                    sort: sortType === '최신순' ? 'latest' : 'oldest',
-                    page: 0,
-                    size: 20,
-                },
-            });
+            const sort = sortType === '최신순' ? 'latest' : 'oldest';
+            let url = '/api/bookmarks';
+            const params = { sort, page: 0, size: 20 };
+
+            if (isTrash) url = '/api/bookmarks/trash';
+            else if (type === 'uncategorized') params.uncategorized = true;
+            else if (!isDefault) params.categoryId = id;   // 'all'은 아무것도 안 붙임
+
+            const res = await api.get(url, { params });
             const data = res.data.data ?? res.data;
             setItems(
                 data.bookmarks.map((b) => ({
@@ -70,11 +72,11 @@ function CategoryDetail() {
         }
     };
 
-    // 처음 열릴 때, 정렬을 바꿀 때마다 다시 불러오기
     useEffect(() => {
         fetchItems();
-    }, [id, sortType]);
+    }, [id, type, sortType]);
 
+    
     // 이동 모달에 보여줄 내 카테고리 목록
     useEffect(() => {
         const fetchCategories = async () => {
@@ -103,15 +105,7 @@ function CategoryDetail() {
         setIsSelectMode(!isSelectMode);
         setSelectedIds([]);
     };
-    const goAdd = () => {
-        setHeaderMenuOpen(false);
-        navigate('/storage/add');
-    };
 
-    const goSort = () => {
-        setHeaderMenuOpen(false);
-        navigate('/storage/sort');
-    };
     // 선택한 링크 삭제 (휴지통으로 이동)
     const handleDeleteItems = async () => {
         try {
@@ -189,8 +183,14 @@ function CategoryDetail() {
                                 </button>
                                 {headerMenuOpen && (
                                     <ul className="pop-menu header-menu">
-                                        <li onClick={goAdd}><img src={plus2} alt="" /> 카테고리 추가</li>
-                                        <li onClick={goSort}><img src={order} alt="" />순서 정렬</li>
+                                        <li
+                                            onClick={() => {
+                                                setHeaderMenuOpen(false);
+                                                toggleSelectMode();
+                                            }}
+                                        >
+                                            <img src={select} alt="" /> 선택하기
+                                        </li>
                                     </ul>
                                 )}
                             </div>
@@ -223,17 +223,30 @@ function CategoryDetail() {
                                 </button>
                                 {sortDropdownOpen && (
                                     <ul className="sort-menu">
-                                        <li onClick={() => { setSortType('최신순'); setSortDropdownOpen(false); }}>최신순</li>
-                                        <li onClick={() => { setSortType('오래된순'); setSortDropdownOpen(false); }}>오래된순</li>
+                                        <li
+                                            className={sortType === '최신순' ? 'active' : ''}
+                                            onClick={() => { setSortType('최신순'); setSortDropdownOpen(false); }}
+                                        >
+                                            <span className="check-slot">
+                                                {sortType === '최신순' && <img src={sortCheck} alt="" />}
+                                            </span>
+                                            최신순
+                                        </li>
+                                        <li
+                                            className={sortType === '오래된순' ? 'active' : ''}
+                                            onClick={() => { setSortType('오래된순'); setSortDropdownOpen(false); }}
+                                        >
+                                            <span className="check-slot">
+                                                {sortType === '오래된순' && <img src={sortCheck} alt="" />}
+                                            </span>
+                                            오래된순
+                                        </li>
                                     </ul>
                                 )}
                             </div>
 
                             <div className="right-controls">
                                 <span className="total-count-text">총 {totalCount}개</span>
-                                <button className="select-mode-btn" onClick={toggleSelectMode} type="button">
-                                    <span><img src={select} alt="" /></span> 선택하기
-                                </button>
                             </div>
                         </div>
                     ) : (

@@ -121,7 +121,8 @@ function Storage() {
     ];
 
     const goDefault = (key) => {
-        console.log('기본 카테고리 클릭:', key);
+        const names = { all: '전체', uncategorized: '미분류', trash: '최근 삭제된 링크' };
+        navigate(`/storage/default/${key}`, { state: { categoryName: names[key] } });
     };
     const emptyCount = Math.max(MIN_SLOTS - categories.length, 0);
 
