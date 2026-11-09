@@ -193,7 +193,7 @@ const Project = () => {
     setViewMode('detail');
   };
 
-  // 삭제 확인 모달에서 "삭제"를 눌렀을 때 실행
+
   const handleDeleteProject = async () => {
     if (!deleteTarget) return;
 
@@ -262,7 +262,7 @@ const Project = () => {
       <header className="project-header">
         <h1>프로젝트</h1>
         <div className="header-icons">
-          {/* 🔍 검색 버튼 클릭 시 프로젝트 검색 페이지로 이동 */}
+
           <button
             className="icon-btn"
             type="button"
@@ -478,7 +478,7 @@ const Project = () => {
         </section>
       </main>
 
-      {/* 삭제 확인 모달 (Storage와 동일) */}
+
       {deleteTarget && (
         <div className="modal-dim" onClick={() => setDeleteTarget(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>

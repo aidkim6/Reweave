@@ -92,7 +92,7 @@ html {
     width: 100%;
     margin-left: 0;
 
-    // 💡 평소에는 화살표가 숨겨져 있다가, .slider-wrapper에 마우스를 올렸을 때(호버 시)만 나타남
+
     .slider-arrow {
       display: none;
 
@@ -110,8 +110,8 @@ html {
         border: none;
         cursor: pointer;
         z-index: 10;
-        opacity: 0; // 평소 투명도 0
-        transition: opacity 0.2s ease-in-out; // 부드럽게 나타나도록 페이드인 효과
+        opacity: 0; 
+        transition: opacity 0.2s ease-in-out; 
 
         img {
           width: 68px;
@@ -129,7 +129,6 @@ html {
       }
     }
 
-    // 마우스를 올렸을 때(호버 시) 화살표 페이드인
     &:hover {
       .slider-arrow {
         opacity: 1;

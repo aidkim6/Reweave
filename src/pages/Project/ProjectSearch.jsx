@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import backIcon from '../../assets/back-arrow.svg';
 import searchIcon from '../../assets/storage/search.svg';
 import logo from '../../assets/icon.svg';
-import ProjectDetail from './ProjectDetail'; // 👈 프로젝트 상세 컴포넌트 임포트
+import ProjectDetail from './ProjectDetail'; 
 import './ProjectSearch.scss';
 
 function ProjectSearch() {
@@ -13,7 +13,7 @@ function ProjectSearch() {
     const [submittedKeyword, setSubmittedKeyword] = useState(''); 
     const [projectList, setProjectList] = useState([]);   
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedProject, setSelectedProject] = useState(null); // 👈 선택된 프로젝트 상세 상태 추가
+    const [selectedProject, setSelectedProject] = useState(null); 
 
     const [recentSearches, setRecentSearches] = useState(() => {
         try {
@@ -97,7 +97,7 @@ function ProjectSearch() {
         return matchTitle || matchTag;
     });
 
-    // 만약 프로젝트가 선택되었다면 검색 화면 대신 ProjectDetail 상세 창을 띄움
+
     if (selectedProject) {
         return (
             <ProjectDetail 

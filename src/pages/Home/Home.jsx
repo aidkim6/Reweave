@@ -31,7 +31,7 @@ const Home = () => {
 
     const headers = { Authorization: `Bearer ${token}` };
 
-    // 1. 유저 정보 조회
+
     try {
       const userRes = await axios.get('/api/users/me', { headers });
       if (userRes.data && userRes.data.data && userRes.data.data.nickname) {
@@ -41,7 +41,7 @@ const Home = () => {
       console.error('유저 정보를 불러오지 못했습니다.', error);
     }
 
-    // 2. 오늘의 AI 리콜 카드 목록 조회 (GET /api/ai/recalls)
+
     try {
       const recallRes = await axios.get('/api/ai/recalls', { headers });
       const rawRecalls = recallRes.data?.data || recallRes.data || [];
@@ -61,7 +61,7 @@ const Home = () => {
       console.error('AI 리콜 카드를 불러오지 못했습니다.', error);
     }
 
-    // 3. 최근 저장한 링크 조회
+
     try {
       const bookmarkRes = await axios.get('/api/bookmarks?size=6', { headers });
       if (bookmarkRes.data && bookmarkRes.data.data && bookmarkRes.data.data.bookmarks) {
@@ -71,7 +71,7 @@ const Home = () => {
       console.error('최근 저장한 링크를 불러오지 못했습니다.', error);
     }
 
-    // 4. 진행 중인 프로젝트 목록 조회
+
     try {
       const projectRes = await axios.get('/api/purpose-groups?status=IN_PROGRESS', { headers });
       const rawProjects = projectRes.data?.data || projectRes.data || [];
@@ -134,7 +134,6 @@ const Home = () => {
       </header>
 
       <main className="home-content">
-        {/* 🤖 AI 리콜 카드 영역 */}
         <section className="section today-section">
           <div className="section-title">
             <h2>
@@ -142,7 +141,7 @@ const Home = () => {
             </h2>
           </div>
 
-          {/* 💡 카드가 3개 이상일 때만 양옆 화살표 클래스 추가 */}
+
           <div className={`slider-wrapper ${recallCards.length >= 3 ? 'has-arrows' : ''}`}>
             {recallCards.length >= 3 && (
               <button
@@ -193,7 +192,7 @@ const Home = () => {
           </div>
         </section>
 
-        {/* 🔗 진행 중인 프로젝트 */}
+
         <section className="section project-section">
           <div className="section-header">
             <h2>진행 중인 프로젝트</h2>
@@ -228,7 +227,7 @@ const Home = () => {
           </div>
         </section>
 
-        {/* 최근에 저장한 링크 */}
+
         <section className="section recent-section">
           <div className="section-header">
             <h2>최근에 저장한 링크</h2>

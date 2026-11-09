@@ -68,7 +68,7 @@ const ProjectSort = ({ projectList = [], onClose, onSave }) => {
     const listNode = listRef.current;
     if (!listNode) return;
 
-    const itemHeight = 60; // 대략적인 아이템 높이
+    const itemHeight = 60; 
     const targetIndex = Math.round(activeIndexRef.current + deltaY / itemHeight);
     const currentItems = itemsRef.current;
 

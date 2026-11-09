@@ -280,7 +280,7 @@ html {
         align-items: flex-start;
         min-width: 0;
 
-        // 보관함(Storage)과 완벽히 동일한 썸네일 그리드 구조
+
         .thumbnail-box.thumb {
           position: relative;
           display: grid;
@@ -499,7 +499,7 @@ html {
     }
   }
 
-  // ---------- 삭제 모달 (Storage와 동일) ----------
+
   .modal-dim {
     position: fixed;
     inset: 0;

@@ -9,13 +9,13 @@ html {
   display: flex;
   flex-direction: column;
 
-  // StorageAdd와 동일한 컨테이너 구조
+
   width: 768px;
   min-height: 844px;
   margin: 0 auto;
   padding: 42px 0 120px;
 
-  // 별도 배경색을 지정하지 않아 StorageAdd와 동일하게 부모 배경 사용
+
   color: $color-white;
   box-sizing: border-box;
   font-family: $font-family;
@@ -152,7 +152,7 @@ html {
     }
   }
 
-  /* StorageAdd와 동일한 나가기 팝업 */
+
   .exit-modal-overlay {
     position: fixed;
     top: 0;
