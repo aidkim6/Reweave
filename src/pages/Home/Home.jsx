@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ProjectDetail from '../Project/ProjectDetail'; // 👈 프로젝트 상세 컴포넌트 임포트
 import './Home.scss';
 
 import logoIcon from '../../assets/logo.svg';
@@ -14,12 +15,15 @@ const Home = () => {
   const navigate = useNavigate();
   const [nickname, setNickname] = useState('사용자');
   const [recentLinks, setRecentLinks] = useState([]);
-  const [projects, setProjects] = useState([]); // 👈 진행 중인 프로젝트 상태 추가
+  const [projects, setProjects] = useState([]);
+  const [recallCards, setRecallCards] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null); // 👈 선택된 프로젝트 상세 상태 추가
 
   const openLink = (id) => navigate(`/link/${id}`);
+  
   const openProjectDetail = (project) => {
-    // 프로젝트 클릭 시 상세 화면이나 프로젝트 관리 탭으로 이동할 수 있도록 연동
-    navigate('/project', { state: { selectedProject: project } });
+    // 화살표나 카드를 눌렀을 때 선택된 프로젝트 데이터를 세팅하여 상세창 오픈
+    setSelectedProject(project);
   };
 
   const fetchHomeData = async () => {
@@ -38,7 +42,17 @@ const Home = () => {
       console.error('유저 정보를 불러오지 못했습니다.', error);
     }
 
-    // 2. 최근 저장한 링크 조회
+    // 2. 오늘의 AI 리콜 카드 목록 조회 (GET /api/ai/recalls)
+    try {
+      const recallRes = await axios.get('/api/ai/recalls', { headers });
+      if (recallRes.data && recallRes.data.data) {
+        setRecallCards(recallRes.data.data);
+      }
+    } catch (error) {
+      console.error('AI 리콜 카드를 불러오지 못했습니다.', error);
+    }
+
+    // 3. 최근 저장한 링크 조회
     try {
       const bookmarkRes = await axios.get('/api/bookmarks?size=4', { headers });
       if (bookmarkRes.data && bookmarkRes.data.data && bookmarkRes.data.data.bookmarks) {
@@ -48,7 +62,7 @@ const Home = () => {
       console.error('최근 저장한 링크를 불러오지 못했습니다.', error);
     }
 
-    // 3. 진행 중인 프로젝트(목적 그룹) 목록 조회 (GET /api/purpose-groups?status=IN_PROGRESS)
+    // 4. 진행 중인 프로젝트(목적 그룹) 목록 조회 (GET /api/purpose-groups?status=IN_PROGRESS)
     try {
       const projectRes = await axios.get('/api/purpose-groups?status=IN_PROGRESS', { headers });
       const rawProjects = projectRes.data?.data || projectRes.data || [];
@@ -93,25 +107,7 @@ const Home = () => {
       container.scrollLeft =
         secondCard.offsetLeft - container.clientWidth / 2 + secondCard.clientWidth / 2;
     }
-  }, []);
-
-  const todayLinks = [
-    {
-      id: 1,
-      tag: '일본여행 계획',
-      title: '도쿄에서 만나는\n디자인 영감 스팟',
-    },
-    {
-      id: 2,
-      tag: 'UIUX 포트폴리오 만들기',
-      title: '합격하는 UI·UX\n포트폴리오 프로젝트 구성법',
-    },
-    {
-      id: 3,
-      tag: '일본여행 계획',
-      title: '일본 여행 전\n할 준비 체크',
-    },
-  ];
+  }, [recallCards]);
 
   const handleScroll = (direction) => {
     if (sliderRef.current) {
@@ -123,6 +119,16 @@ const Home = () => {
     }
   };
 
+  // 만약 프로젝트가 선택되었다면 홈 화면 대신 ProjectDetail 상세 창을 띄움
+  if (selectedProject) {
+    return (
+      <ProjectDetail 
+        projectData={selectedProject} 
+        onClose={() => setSelectedProject(null)} 
+      />
+    );
+  }
+
   return (
     <div className="home-container">
       <header className="home-header">
@@ -130,6 +136,7 @@ const Home = () => {
       </header>
 
       <main className="home-content">
+        {/* 🤖 AI 리콜 카드 영역 */}
         <section className="section today-section">
           <div className="section-title">
             <h2>
@@ -147,19 +154,30 @@ const Home = () => {
             </button>
 
             <div className="card-slider" ref={sliderRef}>
-              {todayLinks.map((item) => (
-                <div
-                  key={item.id}
-                  className="today-card"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => openLink(item.id)}
-                >
-                  <div className="card-info">
-                    <h4>{item.title}</h4>
-                    <span className="card-tag">{item.tag}</span>
+              {recallCards.length > 0 ? (
+                recallCards.map((card) => (
+                  <div
+                    key={card.purposeGroupId}
+                    className="today-card"
+                    style={{ 
+                      cursor: 'pointer',
+                      backgroundImage: card.thumbnails && card.thumbnails.length > 0 ? `url(${card.thumbnails[0]})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                    onClick={() => openProjectDetail({ id: card.purposeGroupId, title: card.purposeName })}
+                  >
+                    <div className="card-info" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', width: '100%', height: '100%', padding: '16px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderRadius: 'inherit' }}>
+                      <span className="card-tag" style={{ color: '#fff', opacity: 0.9 }}>{card.purposeName}</span>
+                      <h4 style={{ color: '#fff', margin: '4px 0 0' }}>{card.recallHeadline || '저장된 링크를 다시 확인해보세요'}</h4>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div style={{ color: '#8E8E8E', fontSize: '14px', padding: '20px 0' }}>
+                  오늘 추천된 리콜 카드가 없어요.
                 </div>
-              ))}
+              )}
             </div>
 
             <button

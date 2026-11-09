@@ -30,27 +30,68 @@ function ProjectDetail({ projectData, onClose }) {
     const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
     const [sortType, setSortType] = useState('최신순'); // '최신순' (latest) / '오래된순' (oldest)
 
-    // AI 그룹핑된 프로젝트 내 북마크 목록 조회 (GET /api/purpose-groups/{purposeGroupId}/bookmarks)
+    // AI 그룹핑된 프로젝트 내 북마크 목록 조회 및 자동 추천 연동
     const fetchProjectBookmarks = async () => {
         if (!purposeGroupId) return;
 
         try {
             setIsLoading(true);
             const token = localStorage.getItem('accessToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+
             const sortParam = sortType === '최신순' ? 'latest' : 'oldest';
 
-            const response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks?sort=${sortParam}`, {
+            // 1. 먼저 목적 그룹 내 북마크 목록 조회
+            let response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks?sort=${sortParam}`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                }
+                headers
             });
 
             if (!response.ok) throw new Error('목적 그룹 내 북마크를 불러오지 못했습니다.');
 
-            const result = await response.json();
-            const rawBookmarks = result.data?.bookmarks || result.data || [];
+            let result = await response.json();
+            let rawBookmarks = result.data?.bookmarks || result.data || [];
+
+            // 2. 만약 연결된 링크가 하나도 없다면, AI 자동 추천 API를 호출해서 매핑해 주기!
+            if (rawBookmarks.length === 0 && projectName) {
+                try {
+                    const recommendRes = await fetch('/api/ai/recommend', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({
+                            purposeTitle: projectName,
+                            categoryIds: projectData?.categories ? projectData.categories.map(c => c.categoryId || c.id) : []
+                        })
+                    });
+
+                    if (recommendRes.ok) {
+                        const recommendData = await recommendRes.json();
+                        const matchedIds = recommendData.data?.matchedBookmarkIds || recommendData.matchedBookmarkIds || [];
+
+                        if (matchedIds.length > 0) {
+                            await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks`, {
+                                method: 'POST',
+                                headers,
+                                body: JSON.stringify({ bookmarkIds: matchedIds })
+                            });
+
+                            const retryResponse = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks?sort=${sortParam}`, {
+                                method: 'GET',
+                                headers
+                            });
+                            if (retryResponse.ok) {
+                                const retryResult = await retryResponse.json();
+                                rawBookmarks = retryResult.data?.bookmarks || retryResult.data || [];
+                            }
+                        }
+                    }
+                } catch (aiError) {
+                    console.error('AI 자동 그룹핑 추천 연동 중 에러 발생:', aiError);
+                }
+            }
 
             // 화면 표시 포맷에 맞게 매핑
             const formattedItems = rawBookmarks.map((b) => ({
@@ -71,6 +112,16 @@ function ProjectDetail({ projectData, onClose }) {
 
     useEffect(() => {
         fetchProjectBookmarks();
+
+        // 💡 새 링크가 저장되었을 때 이벤트를 감지하여 자동으로 목록 갱신
+        const handleBookmarkSaved = () => {
+            fetchProjectBookmarks();
+        };
+
+        window.addEventListener('bookmarkSaved', handleBookmarkSaved);
+        return () => {
+            window.removeEventListener('bookmarkSaved', handleBookmarkSaved);
+        };
     }, [purposeGroupId, sortType]);
 
     const handleSelectItem = (itemId) => {
@@ -126,7 +177,6 @@ function ProjectDetail({ projectData, onClose }) {
 
         try {
             const token = localStorage.getItem('accessToken');
-            // 명세서 기준: targetPurposeGroupId 필요 (여기서는 targetCategory.id 등을 활용하거나 대상 그룹 ID 지정)
             const response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks/move`, {
                 method: 'PUT',
                 headers: {
@@ -134,7 +184,7 @@ function ProjectDetail({ projectData, onClose }) {
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify({
-                    targetPurposeGroupId: targetCategory.id, // 필요시 대상 그룹 ID로 교체
+                    targetPurposeGroupId: targetCategory.id,
                     bookmarkIds: selectedIds
                 })
             });

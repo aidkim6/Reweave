@@ -230,6 +230,7 @@ html {
                 .card-thumb {
                     width: 162px;
                     height: 162px;
+                    aspect-ratio: 1 / 1;
                     background-color: #262927;
                     border-radius: 10px;
                     overflow: hidden;
@@ -242,6 +243,12 @@ html {
                     box-sizing: border-box;
                     transition: border-color 0.2s;
 
+                    img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+
                     .default-thumb-box {
                         display: flex;
                         align-items: center;
@@ -250,10 +257,11 @@ html {
                         height: 100%;
 
                         img {
-                            width: 55px;
-                            height: 55px;
+                            width: 40px;
+                            height: 40px;
                             opacity: 0.6;
                             flex-shrink: 0;
+                            object-fit: contain;
                         }
                     }
 
