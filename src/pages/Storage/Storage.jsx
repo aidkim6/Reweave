@@ -177,7 +177,7 @@ function Storage() {
                                 {cate.thumbs && cate.thumbs.length > 0 ? (
                                     <div className={`thumb-grid thumb-${Math.min(cate.thumbs.length, 4)}`}>
                                         {cate.thumbs.slice(0, 4).map((src, i) => (
-                                            <img key={i} src={src} alt="" />
+                                            <img key={i} src={src} alt="" className='thumb-img' />
                                         ))}
                                     </div>
                                 ) : (

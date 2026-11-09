@@ -8,7 +8,8 @@ import { api } from '../../features/client';
 function StorageSearch() {
     const navigate = useNavigate();
     const location = useLocation();
-
+    const scopeCategoryId = location.state?.categoryId ?? null;      // 없으면 전체 검색
+    const scopeCategoryName = location.state?.categoryName ?? '';
     const [results, setResults] = useState([]);
 
     const [keyword, setKeyword] = useState('');           // 현재 입력 중인 검색어
@@ -26,9 +27,10 @@ function StorageSearch() {
     }, [recentSearches]);
     const searchBookmarks = async (text) => {
         try {
-            const res = await api.get('/api/bookmarks/search', {
-                params: { keyword: text, page: 0, size: 20 },
-            });
+            const params = { keyword: text, page: 0, size: 20 };
+            if (scopeCategoryId) params.categoryId = scopeCategoryId;   // 상세에서 왔을 때만
+
+            const res = await api.get('/api/bookmarks/search', { params });
             const data = res.data.data ?? res.data;
             setResults(data.bookmarks ?? []);
         } catch (e) {
