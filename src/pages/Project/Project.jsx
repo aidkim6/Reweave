@@ -34,6 +34,7 @@ const Project = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [openMoreId, setOpenMoreId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const filterOptions = ['전체', '시작 전', '진행 중', '완료'];
 
@@ -55,7 +56,7 @@ const Project = () => {
   const fetchProjects = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      
+
       let queryUrl = '/api/purpose-groups';
       if (statusFilter !== '전체') {
         queryUrl += `?status=${statusToApi[statusFilter]}`;
@@ -192,13 +193,13 @@ const Project = () => {
     setViewMode('detail');
   };
 
-  const handleDeleteProject = async (purposeGroupId, e) => {
-    e.stopPropagation();
-    if (!window.confirm('정말 이 프로젝트를 삭제하시겠습니까?')) return;
+  // 삭제 확인 모달에서 "삭제"를 눌렀을 때 실행
+  const handleDeleteProject = async () => {
+    if (!deleteTarget) return;
 
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`/api/purpose-groups/${purposeGroupId}`, {
+      const response = await fetch(`/api/purpose-groups/${deleteTarget.id}`, {
         method: 'DELETE',
         headers: {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -212,6 +213,8 @@ const Project = () => {
     } catch (error) {
       console.error('프로젝트 삭제 에러:', error);
       alert(error.message);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -260,9 +263,9 @@ const Project = () => {
         <h1>프로젝트</h1>
         <div className="header-icons">
           {/* 🔍 검색 버튼 클릭 시 프로젝트 검색 페이지로 이동 */}
-          <button 
-            className="icon-btn" 
-            type="button" 
+          <button
+            className="icon-btn"
+            type="button"
             onClick={() => navigate('/project/search')}
           >
             <img src={searchIcon} alt="검색" />
@@ -405,7 +408,7 @@ const Project = () => {
                   <div className="card-body">
                     <div className="title-row">
                       <span className="card-title">{item.title}</span>
-                      
+
                       <div className="more-menu-wrapper">
                         <button
                           className="more-btn"
@@ -439,7 +442,11 @@ const Project = () => {
                             </button>
                             <button
                               className="action-item delete-item"
-                              onClick={(e) => handleDeleteProject(item.id, e)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget(item);
+                                setOpenMoreId(null);
+                              }}
                               type="button"
                             >
                               <img src={deleteIcon} alt="삭제하기" className="action-icon" />
@@ -470,6 +477,27 @@ const Project = () => {
           </div>
         </section>
       </main>
+
+      {/* 삭제 확인 모달 (Storage와 동일) */}
+      {deleteTarget && (
+        <div className="modal-dim" onClick={() => setDeleteTarget(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <p>
+              정말로 “<em>{deleteTarget.title}</em>”을
+              <br />
+              삭제하시겠습니까?
+            </p>
+            <div className="modal-btns">
+              <button type="button" className="btn-cancel" onClick={() => setDeleteTarget(null)}>
+                취소
+              </button>
+              <button type="button" className="btn-delete" onClick={handleDeleteProject}>
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

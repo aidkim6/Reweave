@@ -10,7 +10,7 @@ html {
 .project-container {
   display: flex;
   flex-direction: column;
-  width: 100%;                 
+  width: 100%;
   min-height: 844px;
   margin: 0;
   padding: 42px 0 120px;
@@ -124,7 +124,7 @@ html {
   .project-content {
     flex: 1;
     width: 720px;
-    margin: 0 auto;              
+    margin: 0 auto;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -495,6 +495,67 @@ html {
             }
           }
         }
+      }
+    }
+  }
+
+  // ---------- 삭제 모달 (Storage와 동일) ----------
+  .modal-dim {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+
+  .modal-box {
+    width: 285px;
+    height: 176px;
+    padding: 25px 23px;
+    box-sizing: border-box;
+    background-color: $black-2;
+    border-radius: 15px;
+    box-shadow: 0 4px 25px 0 rgba(0, 0, 0, 0.25);
+
+    p {
+      margin: 0 0 36px;
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 150%;
+      color: #fff;
+    }
+
+    em {
+      font-style: normal;
+      color: $primary-900;
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 6px;
+
+      button {
+        flex: 1;
+        height: 42px;
+        border-radius: 100px;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 150%;
+        cursor: pointer;
+      }
+
+      .btn-cancel {
+        background: transparent;
+        border: 1px solid rgba($gray-1, 0.5);
+        color: $gray-3;
+      }
+
+      .btn-delete {
+        background: #fff;
+        border: none;
+        color: #1d1f1e;
       }
     }
   }

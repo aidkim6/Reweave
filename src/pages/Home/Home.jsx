@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import ProjectDetail from '../Project/ProjectDetail'; // 👈 프로젝트 상세 컴포넌트 임포트
+import ProjectDetail from '../Project/ProjectDetail';
 import './Home.scss';
 
 import logoIcon from '../../assets/logo.svg';
@@ -17,12 +17,11 @@ const Home = () => {
   const [recentLinks, setRecentLinks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [recallCards, setRecallCards] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null); // 👈 선택된 프로젝트 상세 상태 추가
+  const [selectedProject, setSelectedProject] = useState(null);
 
   const openLink = (id) => navigate(`/link/${id}`);
-  
+
   const openProjectDetail = (project) => {
-    // 화살표나 카드를 눌렀을 때 선택된 프로젝트 데이터를 세팅하여 상세창 오픈
     setSelectedProject(project);
   };
 
@@ -45,16 +44,26 @@ const Home = () => {
     // 2. 오늘의 AI 리콜 카드 목록 조회 (GET /api/ai/recalls)
     try {
       const recallRes = await axios.get('/api/ai/recalls', { headers });
-      if (recallRes.data && recallRes.data.data) {
-        setRecallCards(recallRes.data.data);
-      }
+      const rawRecalls = recallRes.data?.data || recallRes.data || [];
+      
+      const formattedRecalls = rawRecalls.map((card) => ({
+        purposeGroupId: card.purposeGroupId || card.projectId,
+        purposeName: card.purposeName || card.projectTitle,
+        bookmarkId: card.bookmarkId,
+        title: card.title,
+        thumbnailUrl: card.thumbnailUrl || (card.thumbnails && card.thumbnails[0]) || '',
+        url: card.url,
+        recallHeadline: card.recallHeadline || card.recommendReason || '저장된 링크를 다시 확인해보세요'
+      }));
+
+      setRecallCards(formattedRecalls);
     } catch (error) {
       console.error('AI 리콜 카드를 불러오지 못했습니다.', error);
     }
 
     // 3. 최근 저장한 링크 조회
     try {
-      const bookmarkRes = await axios.get('/api/bookmarks?size=4', { headers });
+      const bookmarkRes = await axios.get('/api/bookmarks?size=6', { headers });
       if (bookmarkRes.data && bookmarkRes.data.data && bookmarkRes.data.data.bookmarks) {
         setRecentLinks(bookmarkRes.data.data.bookmarks);
       }
@@ -62,19 +71,21 @@ const Home = () => {
       console.error('최근 저장한 링크를 불러오지 못했습니다.', error);
     }
 
-    // 4. 진행 중인 프로젝트(목적 그룹) 목록 조회 (GET /api/purpose-groups?status=IN_PROGRESS)
+    // 4. 진행 중인 프로젝트 목록 조회
     try {
       const projectRes = await axios.get('/api/purpose-groups?status=IN_PROGRESS', { headers });
       const rawProjects = projectRes.data?.data || projectRes.data || [];
 
       const formattedProjects = rawProjects.map((item) => {
-        const tags = item.categories ? item.categories.map((c) => `#${c.categoryName || c.name}`) : [];
+        const tags = item.categories
+          ? item.categories.map((c) => `#${c.categoryName || c.name}`)
+          : [];
         return {
           id: item.purposeGroupId || item.id,
           title: item.purposeName || item.title,
           tags: tags.length > 0 ? tags : ['#일반'],
           status: item.status,
-          thumbnails: item.thumbnails || []
+          thumbnails: item.thumbnails || [],
         };
       });
 
@@ -97,21 +108,9 @@ const Home = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (window.innerWidth >= 768) return;
-    const container = sliderRef.current;
-    if (!container) return;
-    const cards = container.querySelectorAll('.today-card');
-    if (cards.length >= 2) {
-      const secondCard = cards[1];
-      container.scrollLeft =
-        secondCard.offsetLeft - container.clientWidth / 2 + secondCard.clientWidth / 2;
-    }
-  }, [recallCards]);
-
   const handleScroll = (direction) => {
     if (sliderRef.current) {
-      const scrollAmount = 280;
+      const scrollAmount = 300;
       sliderRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
@@ -119,12 +118,11 @@ const Home = () => {
     }
   };
 
-  // 만약 프로젝트가 선택되었다면 홈 화면 대신 ProjectDetail 상세 창을 띄움
   if (selectedProject) {
     return (
-      <ProjectDetail 
-        projectData={selectedProject} 
-        onClose={() => setSelectedProject(null)} 
+      <ProjectDetail
+        projectData={selectedProject}
+        onClose={() => setSelectedProject(null)}
       />
     );
   }
@@ -144,14 +142,17 @@ const Home = () => {
             </h2>
           </div>
 
-          <div className="slider-wrapper">
-            <button
-              className="slider-arrow left"
-              onClick={() => handleScroll('left')}
-              type="button"
-            >
-              <img src={leftArrowIcon} alt="이전" />
-            </button>
+          {/* 💡 카드가 3개 이상일 때만 양옆 화살표 클래스 추가 */}
+          <div className={`slider-wrapper ${recallCards.length >= 3 ? 'has-arrows' : ''}`}>
+            {recallCards.length >= 3 && (
+              <button
+                className="slider-arrow left"
+                onClick={() => handleScroll('left')}
+                type="button"
+              >
+                <img src={leftArrowIcon} alt="이전" />
+              </button>
+            )}
 
             <div className="card-slider" ref={sliderRef}>
               {recallCards.length > 0 ? (
@@ -159,17 +160,17 @@ const Home = () => {
                   <div
                     key={card.purposeGroupId}
                     className="today-card"
-                    style={{ 
+                    style={{
                       cursor: 'pointer',
-                      backgroundImage: card.thumbnails && card.thumbnails.length > 0 ? `url(${card.thumbnails[0]})` : 'none',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
+                      backgroundImage: card.thumbnailUrl ? `url(${card.thumbnailUrl})` : 'none',
                     }}
-                    onClick={() => openProjectDetail({ id: card.purposeGroupId, title: card.purposeName })}
+                    onClick={() =>
+                      openProjectDetail({ id: card.purposeGroupId, title: card.purposeName })
+                    }
                   >
-                    <div className="card-info" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', width: '100%', height: '100%', padding: '16px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderRadius: 'inherit' }}>
-                      <span className="card-tag" style={{ color: '#fff', opacity: 0.9 }}>{card.purposeName}</span>
-                      <h4 style={{ color: '#fff', margin: '4px 0 0' }}>{card.recallHeadline || '저장된 링크를 다시 확인해보세요'}</h4>
+                    <div className="card-info">
+                      <span className="card-tag">{card.purposeName}</span>
+                      <h4>{card.recallHeadline}</h4>
                     </div>
                   </div>
                 ))
@@ -180,17 +181,19 @@ const Home = () => {
               )}
             </div>
 
-            <button
-              className="slider-arrow right"
-              onClick={() => handleScroll('right')}
-              type="button"
-            >
-              <img src={rightArrowIcon} alt="다음" />
-            </button>
+            {recallCards.length >= 3 && (
+              <button
+                className="slider-arrow right"
+                onClick={() => handleScroll('right')}
+                type="button"
+              >
+                <img src={rightArrowIcon} alt="다음" />
+              </button>
+            )}
           </div>
         </section>
 
-        {/* 🔗 진행 중인 프로젝트 동적 연동 영역 */}
+        {/* 🔗 진행 중인 프로젝트 */}
         <section className="section project-section">
           <div className="section-header">
             <h2>진행 중인 프로젝트</h2>
@@ -198,8 +201,8 @@ const Home = () => {
           <div className="project-grid">
             {projects.length > 0 ? (
               projects.map((item) => (
-                <div 
-                  key={item.id} 
+                <div
+                  key={item.id}
                   className="project-card"
                   onClick={() => openProjectDetail(item)}
                   style={{ cursor: 'pointer' }}
@@ -225,6 +228,7 @@ const Home = () => {
           </div>
         </section>
 
+        {/* 최근에 저장한 링크 */}
         <section className="section recent-section">
           <div className="section-header">
             <h2>최근에 저장한 링크</h2>

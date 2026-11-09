@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import backIcon from '../../assets/back-arrow.svg';
 import searchIcon from '../../assets/storage/search.svg';
@@ -9,6 +9,8 @@ import defaulticon from '../../assets/icon.svg';
 import check from '../../assets/storage/check-mark.svg';
 import plus from '../../assets/plus.svg';
 import check1 from '../../assets/storage/check.svg';
+import { api } from '../../features/client';
+import sortCheck from '../../assets/storage/check-white.svg';
 import './ProjectDetail.scss';
 
 function ProjectDetail({ projectData, onClose }) {
@@ -16,106 +18,143 @@ function ProjectDetail({ projectData, onClose }) {
     const { id } = useParams();
     const location = useLocation();
 
-    // 프로젝트 ID 확보 (props나 URL, location에서 추출)
+    // 프로젝트 ID 및 이름 확보
     const purposeGroupId = projectData?.id || projectData?.purposeGroupId || id;
     const projectName = projectData?.title || projectData?.purposeName || location.state?.projectName || '진행 중인 프로젝트';
 
     const [items, setItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [totalCount, setTotalCount] = useState(0);
 
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [activeModal, setActiveModal] = useState(null);
 
     const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
-    const [sortType, setSortType] = useState('최신순'); // '최신순' (latest) / '오래된순' (oldest)
+    const [sortType, setSortType] = useState('최신순'); // '최신순' / '오래된순'
 
-    // AI 그룹핑된 프로젝트 내 북마크 목록 조회 및 자동 추천 연동
-    const fetchProjectBookmarks = async () => {
+    const [categories, setCategories] = useState([{ id: 0, name: '미분류' }]);
+    const [targetCategory, setTargetCategory] = useState({ id: 0, name: '미분류' });
+
+    // 이 프로젝트에 대해 AI 동기화를 이미 했는지 기억 (정렬만 바꿀 때 재호출 방지)
+    const syncedGroupRef = useRef(null);
+
+    // 바깥을 누르면 정렬 드롭다운 닫기
+    useEffect(() => {
+        const close = () => setSortDropdownOpen(false);
+        window.addEventListener('click', close);
+        return () => window.removeEventListener('click', close);
+    }, []);
+
+    // 목록 조회 (size를 API 허용 범위인 20으로 안전하게 설정)
+    const loadList = async (size = 20) => {
+        const sort = sortType === '최신순' ? 'latest' : 'oldest';
+        const res = await api.get(`/api/purpose-groups/${purposeGroupId}/bookmarks`, {
+            params: { sort, page: 0, size }
+        });
+        const data = res.data.data ?? res.data;
+        const rawBookmarks = data.bookmarks || data || [];
+        return { data, rawBookmarks };
+    };
+
+    // 목록 조회 후 화면 반영
+    const showList = async () => {
+        const { data, rawBookmarks } = await loadList(20);
+        setItems(
+            rawBookmarks.map((b) => ({
+                id: b.bookmarkId,
+                title: b.title || '제목 없음',
+                thumb: b.thumbnailUrl || '',
+            }))
+        );
+        setTotalCount(data.totalElements ?? rawBookmarks.length);
+    };
+
+    // AI로 새 링크를 찾아 프로젝트에 추가. 추가된 게 있으면 true
+    const syncWithAi = async () => {
+        try {
+            // 1) props로 넘어온 projectData가 있다면 그것을 우선 활용
+            let categoryIds = projectData?.categories 
+                ? projectData.categories.map((c) => c.categoryId || c.id) 
+                : [];
+
+            // props에 없다면 API로 조회
+            if (categoryIds.length === 0) {
+                const detailRes = await api.get(`/api/purpose-groups/${purposeGroupId}`);
+                const detail = detailRes.data.data ?? detailRes.data;
+
+                categoryIds = (detail.categories || []).map((c) => c.categoryId || c.id);
+                if (categoryIds.length === 0 && detail.categoryId) {
+                    categoryIds.push(detail.categoryId);
+                }
+            }
+
+            if (categoryIds.length === 0) return false;
+
+            // 2) 이미 연결된 링크 ID 전체 (size 범위를 API 제한인 20으로 맞춤)
+            const { rawBookmarks: existing } = await loadList(20);
+            const existingIds = new Set(existing.map((b) => b.bookmarkId));
+
+            // 3) AI 추천 (응답: { matchedBookmarkIds, reason })
+            const recommendRes = await api.post('/api/ai/recommend', {
+                purposeTitle: projectData?.title || projectName,
+                categoryIds,
+            });
+            const rec = recommendRes.data.data ?? recommendRes.data;
+            const matchedIds = rec.matchedBookmarkIds || [];
+
+            // 4) 아직 없는 링크만 추가
+            const newIds = matchedIds.filter((bid) => !existingIds.has(bid));
+            if (newIds.length === 0) return false;
+
+            await api.post(`/api/purpose-groups/${purposeGroupId}/bookmarks`, {
+                bookmarkIds: newIds,
+            });
+            return true;
+        } catch (aiError) {
+            console.error(
+                'AI 자동 그룹핑 추천 연동 중 에러 발생:',
+                aiError.response?.status,
+                aiError.response?.data || aiError
+            );
+            return false;
+        }
+    };
+
+    // withAi가 true일 때만 AI 동기화 (삭제/이동/정렬 변경 후에는 false)
+    const fetchProjectBookmarks = async (withAi = false) => {
         if (!purposeGroupId) return;
 
         try {
             setIsLoading(true);
-            const token = localStorage.getItem('accessToken');
-            const headers = {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            };
-
-            const sortParam = sortType === '최신순' ? 'latest' : 'oldest';
-
-            // 1. 먼저 목적 그룹 내 북마크 목록 조회
-            let response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks?sort=${sortParam}`, {
-                method: 'GET',
-                headers
-            });
-
-            if (!response.ok) throw new Error('목적 그룹 내 북마크를 불러오지 못했습니다.');
-
-            let result = await response.json();
-            let rawBookmarks = result.data?.bookmarks || result.data || [];
-
-            // 2. 만약 연결된 링크가 하나도 없다면, AI 자동 추천 API를 호출해서 매핑해 주기!
-            if (rawBookmarks.length === 0 && projectName) {
-                try {
-                    const recommendRes = await fetch('/api/ai/recommend', {
-                        method: 'POST',
-                        headers,
-                        body: JSON.stringify({
-                            purposeTitle: projectName,
-                            categoryIds: projectData?.categories ? projectData.categories.map(c => c.categoryId || c.id) : []
-                        })
-                    });
-
-                    if (recommendRes.ok) {
-                        const recommendData = await recommendRes.json();
-                        const matchedIds = recommendData.data?.matchedBookmarkIds || recommendData.matchedBookmarkIds || [];
-
-                        if (matchedIds.length > 0) {
-                            await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks`, {
-                                method: 'POST',
-                                headers,
-                                body: JSON.stringify({ bookmarkIds: matchedIds })
-                            });
-
-                            const retryResponse = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks?sort=${sortParam}`, {
-                                method: 'GET',
-                                headers
-                            });
-                            if (retryResponse.ok) {
-                                const retryResult = await retryResponse.json();
-                                rawBookmarks = retryResult.data?.bookmarks || retryResult.data || [];
-                            }
-                        }
-                    }
-                } catch (aiError) {
-                    console.error('AI 자동 그룹핑 추천 연동 중 에러 발생:', aiError);
-                }
-            }
-
-            // 화면 표시 포맷에 맞게 매핑
-            const formattedItems = rawBookmarks.map((b) => ({
-                id: b.bookmarkId,
-                title: b.title || '제목 없음',
-                thumb: b.thumbnailUrl || '',
-                domain: b.domain,
-                createdDate: b.createdDate
-            }));
-
-            setItems(formattedItems);
+            await showList();
         } catch (error) {
-            console.error('목적 그룹 북마크 조회 에러:', error);
+            console.error('목적 그룹 북마크 조회 에러:', error.response?.status, error.response?.data);
         } finally {
             setIsLoading(false);
+        }
+
+        if (withAi) {
+            const added = await syncWithAi();
+            if (added) {
+                try {
+                    await showList();
+                } catch (e) {
+                    console.error('목록 갱신 에러:', e);
+                }
+            }
         }
     };
 
     useEffect(() => {
-        fetchProjectBookmarks();
+        // 프로젝트를 처음 열 때만 AI 동기화, 정렬만 바꿀 땐 목록만 다시 조회
+        const needAi = syncedGroupRef.current !== purposeGroupId;
+        syncedGroupRef.current = purposeGroupId;
+        fetchProjectBookmarks(needAi);
 
-        // 💡 새 링크가 저장되었을 때 이벤트를 감지하여 자동으로 목록 갱신
+        // 새 링크를 저장했을 때는 항상 AI 동기화
         const handleBookmarkSaved = () => {
-            fetchProjectBookmarks();
+            fetchProjectBookmarks(true);
         };
 
         window.addEventListener('bookmarkSaved', handleBookmarkSaved);
@@ -123,6 +162,23 @@ function ProjectDetail({ projectData, onClose }) {
             window.removeEventListener('bookmarkSaved', handleBookmarkSaved);
         };
     }, [purposeGroupId, sortType]);
+
+    // 이동 모달에 보여줄 내 카테고리 목록 불러오기
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get('/api/categories');
+                const data = res.data.data ?? res.data;
+                setCategories([
+                    { id: 0, name: '미분류' },
+                    ...data.categories.map((c) => ({ id: c.categoryId, name: c.categoryName })),
+                ]);
+            } catch (e) {
+                console.log('카테고리 목록 실패', e.response?.status, e.response?.data);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const handleSelectItem = (itemId) => {
         if (!isSelectMode) return;
@@ -136,69 +192,40 @@ function ProjectDetail({ projectData, onClose }) {
         setSelectedIds([]);
     };
 
-    // 목적 그룹 내 북마크 삭제 연동 (DELETE /api/purpose-groups/{purposeGroupId}/bookmarks)
+    // 목적 그룹 내 북마크 삭제 연동
     const handleDeleteItems = async () => {
         if (selectedIds.length === 0) return;
 
         try {
-            const token = localStorage.getItem('accessToken');
-            const response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({ bookmarkIds: selectedIds })
+            await api.delete(`/api/purpose-groups/${purposeGroupId}/bookmarks`, {
+                data: { bookmarkIds: selectedIds }
             });
-
-            if (!response.ok) throw new Error('북마크 삭제에 실패했습니다.');
-
-            setItems(items.filter((item) => !selectedIds.includes(item.id)));
+            await fetchProjectBookmarks(false);
+        } catch (error) {
+            console.error('북마크 삭제 에러:', error.response?.status, error.response?.data);
+        } finally {
             setSelectedIds([]);
             setIsSelectMode(false);
             setActiveModal(null);
-            fetchProjectBookmarks();
-        } catch (error) {
-            console.error('북마크 삭제 에러:', error);
-            alert(error.message);
         }
     };
 
-    const categories = [
-        { id: 0, name: '미분류' },
-        { id: 1, name: '참조 카테고리 1' },
-        { id: 2, name: '참조 카테고리 2' },
-    ];
-    const [targetCategory, setTargetCategory] = useState(categories[0]);
-
-    // 목적 그룹 간 북마크 이동 연동 (PUT /api/purpose-groups/{purposeGroupId}/bookmarks/move)
+    // 목적 그룹 내 북마크 이동 연동 (백엔드가 PUT이라 api.put 사용)
     const handleMoveItems = async () => {
         if (selectedIds.length === 0) return;
 
         try {
-            const token = localStorage.getItem('accessToken');
-            const response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks/move`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({
-                    targetPurposeGroupId: targetCategory.id,
-                    bookmarkIds: selectedIds
-                })
+            await api.put(`/api/purpose-groups/${purposeGroupId}/bookmarks/move`, {
+                targetPurposeGroupId: targetCategory.id === 0 ? null : targetCategory.id,
+                bookmarkIds: selectedIds
             });
-
-            if (!response.ok) throw new Error('북마크 이동에 실패했습니다.');
-
-            alert(`선택한 항목이 이동되었습니다.`);
+            await fetchProjectBookmarks(false);
+        } catch (error) {
+            console.error('북마크 이동 에러:', error.response?.status, error.response?.data);
+        } finally {
             setSelectedIds([]);
             setIsSelectMode(false);
             setActiveModal(null);
-            fetchProjectBookmarks();
-        } catch (error) {
-            console.error('북마크 이동 에러:', error);
-            alert(error.message);
         }
     };
 
@@ -211,27 +238,40 @@ function ProjectDetail({ projectData, onClose }) {
     };
 
     return (
-        <div className="project-detail-wrap" onClick={() => setSortDropdownOpen(false)}>
+        <div className="project-detail-wrap">
+            {/* 고정 헤더 */}
             <header className="detail-header">
-                <div className="header-left">
-                    <button className="back-btn" onClick={handleBack} type="button">
-                        <img src={backIcon} alt="뒤로가기" />
-                    </button>
-                    <h1>{projectName}</h1>
-                </div>
+                {!isSelectMode ? (
+                    <>
+                        <div className="header-left">
+                            <button className="back-btn" onClick={handleBack} type="button">
+                                <img src={backIcon} alt="뒤로가기" />
+                            </button>
+                            <h1>{projectName}</h1>
+                        </div>
 
-                <div className="header-right">
-                    <button className="icon-btn" type="button" onClick={() => navigate('/storage/search')}>
-                        <img src={searchIcon} alt="검색" />
-                    </button>
-                    <button className="icon-btn" type="button">
-                        <img src={moreIcon} alt="더보기" />
-                    </button>
-                </div>
+                        <div className="header-right">
+                            <button className="icon-btn" type="button" onClick={() => navigate('/storage/search')}>
+                                <img src={searchIcon} alt="검색" />
+                            </button>
+                            <button className="icon-btn" type="button">
+                                <img src={moreIcon} alt="더보기" />
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="header-left">
+                        <button className="back-btn" onClick={toggleSelectMode} type="button">
+                            <img src={backIcon} alt="선택 취소" />
+                        </button>
+                        <h1>{selectedIds.length}개 선택됨</h1>
+                    </div>
+                )}
             </header>
 
+            {/* 메인 콘텐츠 영역 */}
             <main className="detail-main">
-
+                {/* 상단 컨트롤 바 */}
                 <div className="sticky-action-bar">
                     {!isSelectMode ? (
                         <div className="normal-bar">
@@ -246,14 +286,30 @@ function ProjectDetail({ projectData, onClose }) {
                                 </button>
                                 {sortDropdownOpen && (
                                     <ul className="sort-menu">
-                                        <li onClick={() => { setSortType('최신순'); setSortDropdownOpen(false); }}>최신순</li>
-                                        <li onClick={() => { setSortType('오래된순'); setSortDropdownOpen(false); }}>오래된순</li>
+                                        <li
+                                            className={sortType === '최신순' ? 'active' : ''}
+                                            onClick={() => { setSortType('최신순'); setSortDropdownOpen(false); }}
+                                        >
+                                            <span className="check-slot">
+                                                {sortType === '최신순' && <img src={sortCheck} alt="" />}
+                                            </span>
+                                            최신순
+                                        </li>
+                                        <li
+                                            className={sortType === '오래된순' ? 'active' : ''}
+                                            onClick={() => { setSortType('오래된순'); setSortDropdownOpen(false); }}
+                                        >
+                                            <span className="check-slot">
+                                                {sortType === '오래된순' && <img src={sortCheck} alt="" />}
+                                            </span>
+                                            오래된순
+                                        </li>
                                     </ul>
                                 )}
                             </div>
 
                             <div className="right-controls">
-                                <span className="total-count-text">총 {items.length}개</span>
+                                <span className="total-count-text">총 {totalCount}개</span>
                                 <button className="select-mode-btn" onClick={toggleSelectMode} type="button">
                                     <span><img src={select} alt="" /></span> 선택하기
                                 </button>
@@ -261,7 +317,6 @@ function ProjectDetail({ projectData, onClose }) {
                         </div>
                     ) : (
                         <div className="selecting-bar">
-                            <span className="selected-count-text">{selectedIds.length}개 선택됨</span>
                             <div className="select-actions">
                                 <button
                                     className={`action-btn move ${selectedIds.length === 0 ? 'disabled' : ''}`}
@@ -282,7 +337,7 @@ function ProjectDetail({ projectData, onClose }) {
                     )}
                 </div>
 
-
+                {/* 아이템 그리드 */}
                 <div className="item-grid">
                     {isLoading ? (
                         <div style={{ color: '#929292', textAlign: 'center', gridColumn: 'span 2', padding: '40px 0' }}>
@@ -326,6 +381,7 @@ function ProjectDetail({ projectData, onClose }) {
                 </div>
             </main>
 
+            {/* 모달 영역 (이동 / 삭제) */}
             {activeModal === 'move' && (
                 <div className="modal-overlay-detail" onClick={() => setActiveModal(null)}>
                     <div className="modal-content move-modal" onClick={(e) => e.stopPropagation()}>
@@ -356,22 +412,32 @@ function ProjectDetail({ projectData, onClose }) {
                         <button className="submit-action-btn" onClick={handleMoveItems} type="button">
                             이동하기
                         </button>
-                        <p className="enter" onClick={() => setActiveModal(null)}>닫기</p>
+                        <p className="enter" type="button" onClick={() => setActiveModal(null)}>enter</p>
                     </div>
                 </div>
             )}
 
             {activeModal === 'delete' && (
                 <div className="modal-overlay-detail" onClick={() => setActiveModal(null)}>
-                    <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
-                        <p className="delete-msg">
-                            정말로 <strong>선택한 링크를</strong><br />삭제하시겠습니까?
+                    <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
+                        <p>
+                            정말로 <em>선택한 링크를</em>
+                            <br />
+                            삭제하시겠습니까?
                         </p>
-                        <div className="delete-modal-btns">
-                            <button className="modal-btn cancel" onClick={() => setActiveModal(null)} type="button">
+                        <div className="modal-btns">
+                            <button
+                                type="button"
+                                className="btn-cancel"
+                                onClick={() => setActiveModal(null)}
+                            >
                                 취소
                             </button>
-                            <button className="modal-btn confirm" onClick={handleDeleteItems} type="button">
+                            <button
+                                type="button"
+                                className="btn-delete"
+                                onClick={handleDeleteItems}
+                            >
                                 삭제
                             </button>
                         </div>

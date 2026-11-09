@@ -1,6 +1,5 @@
 @import '../../styles/main.scss';
 
-
 html {
   overflow-y: scroll;
 }
@@ -447,53 +446,54 @@ html {
             }
         }
 
+        // Project.scss의 삭제 팝업과 동일한 디자인
         .delete-modal {
             width: 285px;
             height: 176px;
             padding: 25px 23px;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            text-align: left;
-            background-color: #2d2f2d;
-            border: none;
-            border-radius: 16px;
+            box-sizing: border-box;
+            background-color: $black-2;
+            border-radius: 15px;
+            box-shadow: 0 4px 25px 0 rgba(0, 0, 0, 0.25);
 
-            .delete-msg {
+            p {
+                margin: 0 0 36px;
                 font-size: 16px;
-                line-height: 1.5;
-                color: #ffffff;
-                margin: 0 0 40px;
-
-                strong {
-                    font-weight: 700;
-                }
+                font-weight: 400;
+                line-height: 150%;
+                color: #fff;
             }
 
-            .delete-modal-btns {
+            em {
+                font-style: normal;
+                font-weight: 600;
+                color: #fff;
+            }
+
+            .modal-btns {
                 display: flex;
-                gap: 8px;
-                width: 100%;
+                gap: 6px;
 
-                .modal-btn {
+                button {
                     flex: 1;
-                    height: 44px;
+                    height: 42px;
                     border-radius: 100px;
-                    font-size: 15px;
+                    font-size: 16px;
                     font-weight: 600;
+                    line-height: 150%;
                     cursor: pointer;
+                }
 
-                    &.cancel {
-                        background-color: transparent;
-                        border: 1px solid #4a4d4a;
-                        color: #9a9d9a;
-                    }
+                .btn-cancel {
+                    background: transparent;
+                    border: 1px solid rgba($gray-1, 0.5);
+                    color: $gray-3;
+                }
 
-                    &.confirm {
-                        background-color: #ffffff;
-                        border: none;
-                        color: #121212;
-                    }
+                .btn-delete {
+                    background: #fff;
+                    border: none;
+                    color: #1d1f1e;
                 }
             }
         }
@@ -527,6 +527,13 @@ html {
           }
         }
       }
+    }
+
+    .modal-overlay-detail {
+        .delete-modal {
+            width: 285px;
+            max-width: calc(100vw - 32px);
+        }
     }
   }
 }
