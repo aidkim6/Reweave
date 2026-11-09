@@ -57,6 +57,7 @@ function App() {
           <Route path="/project" element={<Project />} />
           <Route path="/project/search" element={<ProjectSearch />} /> {/* 👈 프로젝트 검색 라우트 추가 */}
           <Route path="/mypage" element={<Mypage />} />
+          <Route path="/storage/default/:type" element={<CategoryDetail />} />
         </Routes>
       </main>
 
