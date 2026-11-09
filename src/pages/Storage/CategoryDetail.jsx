@@ -175,8 +175,7 @@ function CategoryDetail() {
                             <button
                                 className="icon-btn"
                                 type="button"
-                                onClick={() => navigate('/storage/search')}
-                            >
+                                onClick={() => navigate('/storage/search', { state: { categoryId: id, categoryName: name } })}                            >
                                 <img src={searchIcon} alt="검색" />
                             </button>
 
