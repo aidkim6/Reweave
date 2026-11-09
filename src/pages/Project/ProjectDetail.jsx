@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import backIcon from '../../assets/back-arrow.svg';
 import searchIcon from '../../assets/storage/search.svg';
@@ -16,21 +16,62 @@ function ProjectDetail({ projectData, onClose }) {
     const { id } = useParams();
     const location = useLocation();
 
-    const projectName = projectData?.title || location.state?.projectName || '진행 중인 프로젝트';
+    // 프로젝트 ID 확보 (props나 URL, location에서 추출)
+    const purposeGroupId = projectData?.id || projectData?.purposeGroupId || id;
+    const projectName = projectData?.title || projectData?.purposeName || location.state?.projectName || '진행 중인 프로젝트';
 
-    const [items, setItems] = useState([
-        { id: 1, title: '프로젝트 관련 링크 1 | 디자인 가이드', thumb: '' },
-        { id: 2, title: 'API 명세서 및 요구사항 정의서', thumb: '' },
-        { id: 3, title: '와이어프레임 및 피그마 시안 링크', thumb: '' },
-        { id: 4, title: '팀 회고 및 주간 미팅 록', thumb: '' },
-    ]);
+    const [items, setItems] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [activeModal, setActiveModal] = useState(null);
 
     const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
-    const [sortType, setSortType] = useState('최신순');
+    const [sortType, setSortType] = useState('최신순'); // '최신순' (latest) / '오래된순' (oldest)
+
+    // AI 그룹핑된 프로젝트 내 북마크 목록 조회 (GET /api/purpose-groups/{purposeGroupId}/bookmarks)
+    const fetchProjectBookmarks = async () => {
+        if (!purposeGroupId) return;
+
+        try {
+            setIsLoading(true);
+            const token = localStorage.getItem('accessToken');
+            const sortParam = sortType === '최신순' ? 'latest' : 'oldest';
+
+            const response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks?sort=${sortParam}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            });
+
+            if (!response.ok) throw new Error('목적 그룹 내 북마크를 불러오지 못했습니다.');
+
+            const result = await response.json();
+            const rawBookmarks = result.data?.bookmarks || result.data || [];
+
+            // 화면 표시 포맷에 맞게 매핑
+            const formattedItems = rawBookmarks.map((b) => ({
+                id: b.bookmarkId,
+                title: b.title || '제목 없음',
+                thumb: b.thumbnailUrl || '',
+                domain: b.domain,
+                createdDate: b.createdDate
+            }));
+
+            setItems(formattedItems);
+        } catch (error) {
+            console.error('목적 그룹 북마크 조회 에러:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProjectBookmarks();
+    }, [purposeGroupId, sortType]);
 
     const handleSelectItem = (itemId) => {
         if (!isSelectMode) return;
@@ -44,11 +85,32 @@ function ProjectDetail({ projectData, onClose }) {
         setSelectedIds([]);
     };
 
-    const handleDeleteItems = () => {
-        setItems(items.filter((item) => !selectedIds.includes(item.id)));
-        setSelectedIds([]);
-        setIsSelectMode(false);
-        setActiveModal(null);
+    // 목적 그룹 내 북마크 삭제 연동 (DELETE /api/purpose-groups/{purposeGroupId}/bookmarks)
+    const handleDeleteItems = async () => {
+        if (selectedIds.length === 0) return;
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ bookmarkIds: selectedIds })
+            });
+
+            if (!response.ok) throw new Error('북마크 삭제에 실패했습니다.');
+
+            setItems(items.filter((item) => !selectedIds.includes(item.id)));
+            setSelectedIds([]);
+            setIsSelectMode(false);
+            setActiveModal(null);
+            fetchProjectBookmarks();
+        } catch (error) {
+            console.error('북마크 삭제 에러:', error);
+            alert(error.message);
+        }
     };
 
     const categories = [
@@ -58,13 +120,37 @@ function ProjectDetail({ projectData, onClose }) {
     ];
     const [targetCategory, setTargetCategory] = useState(categories[0]);
 
-    const handleMoveItems = () => {
-        alert(`선택한 항목이 '${targetCategory.name}' (으)로 이동되었습니다.`);
-        setSelectedIds([]);
-        setIsSelectMode(false);
-        setActiveModal(null);
-    };
+    // 목적 그룹 간 북마크 이동 연동 (PUT /api/purpose-groups/{purposeGroupId}/bookmarks/move)
+    const handleMoveItems = async () => {
+        if (selectedIds.length === 0) return;
 
+        try {
+            const token = localStorage.getItem('accessToken');
+            // 명세서 기준: targetPurposeGroupId 필요 (여기서는 targetCategory.id 등을 활용하거나 대상 그룹 ID 지정)
+            const response = await fetch(`/api/purpose-groups/${purposeGroupId}/bookmarks/move`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    targetPurposeGroupId: targetCategory.id, // 필요시 대상 그룹 ID로 교체
+                    bookmarkIds: selectedIds
+                })
+            });
+
+            if (!response.ok) throw new Error('북마크 이동에 실패했습니다.');
+
+            alert(`선택한 항목이 이동되었습니다.`);
+            setSelectedIds([]);
+            setIsSelectMode(false);
+            setActiveModal(null);
+            fetchProjectBookmarks();
+        } catch (error) {
+            console.error('북마크 이동 에러:', error);
+            alert(error.message);
+        }
+    };
 
     const handleBack = () => {
         if (onClose) {
@@ -148,35 +234,45 @@ function ProjectDetail({ projectData, onClose }) {
 
 
                 <div className="item-grid">
-                    {items.map((item) => {
-                        const isSelected = selectedIds.includes(item.id);
-                        return (
-                            <div
-                                className={`detail-card ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
-                                key={item.id}
-                                style={{ cursor: 'pointer' }}
-                                onClick={() =>
-                                    isSelectMode ? handleSelectItem(item.id) : navigate(`/link/${item.id}`)
-                                }
-                            >
-                                <div className="card-thumb">
-                                    {item.thumb ? (
-                                        <img src={item.thumb} alt="" />
-                                    ) : (
-                                        <div className="default-thumb-box">
-                                            <img src={defaulticon} alt="" />
-                                        </div>
-                                    )}
-                                    {isSelectMode && (
-                                        <div className={`checkbox-circle ${isSelected ? 'checked' : ''}`}>
-                                            {isSelected && <span className="check-mark"><img src={check} alt="" /></span>}
-                                        </div>
-                                    )}
+                    {isLoading ? (
+                        <div style={{ color: '#929292', textAlign: 'center', gridColumn: 'span 2', padding: '40px 0' }}>
+                            AI가 그룹핑한 링크를 불러오는 중...
+                        </div>
+                    ) : items.length === 0 ? (
+                        <div style={{ color: '#929292', textAlign: 'center', gridColumn: 'span 2', padding: '40px 0' }}>
+                            이 프로젝트에 연결된 링크가 없습니다.
+                        </div>
+                    ) : (
+                        items.map((item) => {
+                            const isSelected = selectedIds.includes(item.id);
+                            return (
+                                <div
+                                    className={`detail-card ${isSelectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
+                                    key={item.id}
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() =>
+                                        isSelectMode ? handleSelectItem(item.id) : navigate(`/link/${item.id}`)
+                                    }
+                                >
+                                    <div className="card-thumb">
+                                        {item.thumb ? (
+                                            <img src={item.thumb} alt="" />
+                                        ) : (
+                                            <div className="default-thumb-box">
+                                                <img src={defaulticon} alt="" />
+                                            </div>
+                                        )}
+                                        {isSelectMode && (
+                                            <div className={`checkbox-circle ${isSelected ? 'checked' : ''}`}>
+                                                {isSelected && <span className="check-mark"><img src={check} alt="" /></span>}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="card-title">{item.title}</p>
                                 </div>
-                                <p className="card-title">{item.title}</p>
-                            </div>
-                        );
-                    })}
+                            );
+                        })
+                    )}
                 </div>
             </main>
 

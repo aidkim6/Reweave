@@ -4,6 +4,7 @@ import Login from './pages/Login/Login.jsx';
 import Signup from './pages/Signup/Signup.jsx';
 import Home from './pages/Home/Home.jsx';
 import Project from './pages/Project/Project.jsx';
+import ProjectSearch from './pages/Project/ProjectSearch.jsx'; // 👈 프로젝트 검색 컴포넌트 임포트 추가
 import Mypage from './pages/Mypage/myPage.jsx';
 import Storage from './pages/Storage/Storage.jsx';
 import StorageAdd from './pages/Storage/StorageAdd.jsx';
@@ -20,7 +21,7 @@ function App() {
   const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const hideBottomNavPaths = ['/login', '/signup'];
+  const hideBottomNavPaths = ['/login', '/signup', '/project/search']; // 👈 검색창에서는 하단 내비 숨기기
   const showBottomNav =
     !hideBottomNavPaths.includes(location.pathname) && !location.pathname.startsWith('/link/');
 
@@ -54,6 +55,7 @@ function App() {
           <Route path="/storage/detail/:id" element={<CategoryDetail />} />
           <Route path="/link/:id" element={<LinkDetail />} />
           <Route path="/project" element={<Project />} />
+          <Route path="/project/search" element={<ProjectSearch />} /> {/* 👈 프로젝트 검색 라우트 추가 */}
           <Route path="/mypage" element={<Mypage />} />
         </Routes>
       </main>
