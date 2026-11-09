@@ -8,15 +8,9 @@ import edit from '../../assets/storage/edit.svg';
 import moreH from '../../assets/storage/moreH.svg';
 import order from '../../assets/storage/order.svg';
 import defaultLogo from '../../assets/icon.svg';
-
+import { api } from '../../features/client';
 import './Storage.scss';
 
-const initialCategories = [
-    { id: 1, name: '요리', thumbs: [] },
-    { id: 2, name: '뜨개질', thumbs: [] },
-    { id: 3, name: '포트폴리오', thumbs: [] },
-    { id: 4, name: '디자인', thumbs: [] },
-];
 
 const MIN_SLOTS = 8;
 
@@ -24,10 +18,9 @@ function Storage() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [tab, setTab] = useState('my'); 
-    const [categories, setCategories] = useState(
-        location.state?.categories ?? initialCategories
-    );
+    const [tab, setTab] = useState('my');
+    const [categories, setCategories] = useState([]);
+    const [defaults, setDefaults] = useState(null);
     const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
     const [cardMenuId, setCardMenuId] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -39,6 +32,41 @@ function Storage() {
         };
         window.addEventListener('click', close);
         return () => window.removeEventListener('click', close);
+    }, []);
+
+    // 서버 응답을 화면에서 쓰는 이름으로 바꿔주는 함수
+    const toView = (c) => ({
+        id: c.categoryId,
+        name: c.categoryName,
+        description: c.description,
+        count: c.bookmarkCount,
+        thumbs: c.thumbnails ?? [],
+    });
+
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get('/api/categories');
+            const data = res.data.data ?? res.data;
+            setCategories(data.categories.map(toView));
+        } catch (e) {
+            console.log('카테고리 목록 실패', e.response?.status, e.response?.data);
+        }
+    };
+    const fetchDefaults = async () => {
+        try {
+            const res = await api.get('/api/categories/default');
+            setDefaults(res.data.data ?? res.data);
+        } catch (e) {
+            console.log('기본 카테고리 실패', e.response?.status, e.response?.data);
+        }
+    };
+
+    useEffect(() => {
+        fetchDefaults();
+    }, []);
+
+    useEffect(() => {
+        fetchCategories();
     }, []);
 
     const goAdd = () => {
@@ -61,20 +89,40 @@ function Storage() {
         navigate(`/storage/detail/${cate.id}`, { state: { categoryName: cate.name } });
     };
 
-    const handleEdit = (id) => {
+    const handleEdit = async (id) => {
         const target = categories.find((c) => c.id === id);
         const name = window.prompt('카테고리 이름을 입력하세요', target.name);
-        if (name && name.trim()) {
-            setCategories(categories.map((c) => (c.id === id ? { ...c, name: name.trim() } : c)));
-        }
         setCardMenuId(null);
+        if (!name || !name.trim()) return;
+
+        try {
+            await api.patch(`/api/categories/${id}`, { categoryName: name.trim() });
+            await fetchCategories();
+        } catch (e) {
+            // 409 DUPLICATE_CATEGORY_NAME: 이름 중복
+            console.log('카테고리 수정 실패', e.response?.status, e.response?.data);
+        }
     };
 
-    const handleDelete = () => {
-        setCategories(categories.filter((c) => c.id !== deleteTarget.id));
-        setDeleteTarget(null);
+    const handleDelete = async () => {
+        try {
+            await api.delete(`/api/categories/${deleteTarget.id}`);
+            await fetchCategories(); // 삭제 후 목록 다시 불러오기
+        } catch (e) {
+            console.log('카테고리 삭제 실패', e.response?.status, e.response?.data);
+        } finally {
+            setDeleteTarget(null);
+        }
     };
+    const defaultCards = [
+        { key: 'all', name: '전체', data: defaults?.all },
+        { key: 'uncategorized', name: '미분류', data: defaults?.uncategorized },
+        { key: 'trash', name: '최근 삭제된 링크', data: defaults?.trash },
+    ];
 
+    const goDefault = (key) => {
+        console.log('기본 카테고리 클릭:', key);
+    };
     const emptyCount = Math.max(MIN_SLOTS - categories.length, 0);
 
     return (
@@ -119,10 +167,10 @@ function Storage() {
             {tab === 'my' && (
                 <div className="category-main">
                     {categories.map((cate) => (
-                        <div 
-                            className="category-item" 
-                            key={cate.id} 
-                            onClick={() => goDetail(cate)} // 👈 카드 전체를 누르면 상세 페이지로 이동!
+                        <div
+                            className="category-item"
+                            key={cate.id}
+                            onClick={() => goDetail(cate)}
                             style={{ cursor: 'pointer' }}
                         >
                             <div className="thumb">
@@ -142,7 +190,7 @@ function Storage() {
                             <div className="item-info">
                                 <div className="item-text">
                                     <p className="item-name">{cate.name}</p>
-                                    <span className="item-count">{cate.thumbs.length}개</span>
+                                    <span className="item-count">{cate.count}개</span>
                                 </div>
                                 <div className="item-more" onClick={(e) => e.stopPropagation()}>
                                     <button
@@ -193,8 +241,41 @@ function Storage() {
                 </div>
             )}
 
-            {tab === 'default' && <div className="category-main">{/* 기본 카테고리 영역 */}</div>}
-
+            {tab === 'default' && (
+                <div className="category-main">
+                    {defaultCards.map((card) => {
+                        const thumbs = card.data?.thumbnails ?? [];
+                        return (
+                            <div
+                                className="category-item"
+                                key={card.key}
+                                onClick={() => goDefault(card.key)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <div className="thumb">
+                                    {thumbs.length > 0 ? (
+                                        <div className={`thumb-grid thumb-${Math.min(thumbs.length, 4)}`}>
+                                            {thumbs.slice(0, 4).map((src, i) => (
+                                                <img key={i} src={src} alt="" />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="default-thumb-box">
+                                            <img src={defaultLogo} alt="기본 로고" className="default-logo-img" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="item-info">
+                                    <div className="item-text">
+                                        <p className="item-name">{card.name}</p>
+                                        <span className="item-count">{card.data?.count ?? 0}개</span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
             {deleteTarget && (
                 <div className="modal-dim" onClick={() => setDeleteTarget(null)}>
                     <div className="modal-box" onClick={(e) => e.stopPropagation()}>

@@ -4,22 +4,16 @@ import backIcon from '../../assets/back-arrow.svg';
 import searchIcon from '../../assets/storage/search.svg';
 import logo from '../../assets/icon.svg';
 import './StorageSearch.scss';
-
+import { api } from '../../features/client';
 function StorageSearch() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Storage 컴포넌트에서 전달받은 전체 카테고리 목록 (없으면 기본값 사용)
-    const allCategories = location.state?.categories ?? [
-        { id: 1, name: '요리', thumbs: [] },
-        { id: 2, name: '뜨개질', thumbs: [] },
-        { id: 3, name: '포트폴리오', thumbs: [] },
-        { id: 4, name: '디자인', thumbs: [] },
-    ];
+    const [results, setResults] = useState([]);
 
     const [keyword, setKeyword] = useState('');           // 현재 입력 중인 검색어
     const [submittedKeyword, setSubmittedKeyword] = useState(''); // 엔터를 치거나 검색 버튼을 눌러 확정된 검색어
-    
+
     // 최근 검색어 (localStorage 연동하여 실제 저장 및 유지)
     const [recentSearches, setRecentSearches] = useState(() => {
         const saved = localStorage.getItem('recent_searches');
@@ -30,7 +24,18 @@ function StorageSearch() {
     useEffect(() => {
         localStorage.setItem('recent_searches', JSON.stringify(recentSearches));
     }, [recentSearches]);
-
+    const searchBookmarks = async (text) => {
+        try {
+            const res = await api.get('/api/bookmarks/search', {
+                params: { keyword: text, page: 0, size: 20 },
+            });
+            const data = res.data.data ?? res.data;
+            setResults(data.bookmarks ?? []);
+        } catch (e) {
+            console.log('북마크 검색 실패', e.response?.status, e.response?.data);
+            setResults([]);
+        }
+    };
     // 검색어 제출 처리 (엔터 또는 검색 아이콘 클릭)
     const handleSearchSubmit = (e) => {
         if (e) e.preventDefault();
@@ -38,18 +43,18 @@ function StorageSearch() {
         if (!trimmed) return;
 
         setSubmittedKeyword(trimmed);
+        searchBookmarks(trimmed);   // ← 추가
 
-        // 최근 검색어 목록에 추가 (중복 제거 및 최신순 정렬, 최대 10개)
         setRecentSearches((prev) => {
             const filtered = prev.filter((item) => item !== trimmed);
             return [trimmed, ...filtered].slice(0, 10);
         });
     };
 
-    // 최근 검색어 칩 클릭 시
     const handleSelectKeyword = (text) => {
         setKeyword(text);
         setSubmittedKeyword(text);
+        searchBookmarks(text);      // ← 추가
     };
 
     // 모두 지우기
@@ -57,10 +62,6 @@ function StorageSearch() {
         setRecentSearches([]);
     };
 
-    // 확정된 검색어(submittedKeyword)를 포함하는 카테고리 필터링
-    const filteredResults = allCategories.filter((cat) =>
-        cat.name.toLowerCase().includes(submittedKeyword.toLowerCase())
-    );
 
     return (
         <div className="storage-search-wrap">
@@ -109,24 +110,25 @@ function StorageSearch() {
                     )
                 ) : (
                     <section className="result-section">
-                        {filteredResults.length > 0 && (
+                        {results.length > 0 && (
                             <div className="result-grid">
-                                {filteredResults.map((cat) => (
-                                    <div className="result-card" key={cat.id}>
+                                {results.map((item) => (
+                                    <div
+                                        className="result-card"
+                                        key={item.bookmarkId}
+                                        onClick={() => navigate(`/link/${item.bookmarkId}`)}
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         <div className="result-thumb">
-                                            {cat.thumbs && cat.thumbs.length > 0 ? (
-                                                <div className={`thumb-grid thumb-${Math.min(cat.thumbs.length, 4)}`}>
-                                                    {cat.thumbs.slice(0, 4).map((src, i) => (
-                                                        <img key={i} src={src} alt="" />
-                                                    ))}
-                                                </div>
+                                            {item.thumbnailUrl ? (
+                                                <img src={item.thumbnailUrl} alt="" />
                                             ) : (
                                                 <div className="default-thumb-box">
                                                     <img src={logo} alt="기본 로고" className="default-logo-img" />
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="result-name">{cat.name}</p>
+                                        <p className="result-name">{item.title}</p>
                                     </div>
                                 ))}
                             </div>
