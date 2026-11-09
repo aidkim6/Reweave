@@ -12,7 +12,6 @@ import { api } from '../../features/client';
 import './Storage.scss';
 
 
-const MIN_SLOTS = 8;
 
 function Storage() {
     const navigate = useNavigate();
@@ -124,7 +123,6 @@ function Storage() {
         const names = { all: '전체', uncategorized: '미분류', trash: '최근 삭제된 링크' };
         navigate(`/storage/default/${key}`, { state: { categoryName: names[key] } });
     };
-    const emptyCount = Math.max(MIN_SLOTS - categories.length, 0);
 
     return (
         <div className="storage-wrap">
@@ -223,22 +221,7 @@ function Storage() {
                         </div>
                     ))}
 
-                    {/* 빈 카드 영역 */}
-                    {Array.from({ length: emptyCount }).map((_, i) => (
-                        <div className="category-item empty" key={`empty-${i}`}>
-                            <div className="thumb">
-                                <div className="default-thumb-box">
-                                    <img src={defaultLogo} alt="기본 로고" className="default-logo-img" />
-                                </div>
-                            </div>
-                            <div className="item-info">
-                                <div className="item-text">
-                                    <p className="item-name">카테고리 제목</p>
-                                    <span className="item-count">00개</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                    
                 </div>
             )}
 
