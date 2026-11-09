@@ -1,0 +1,60 @@
+@import './styles/mixins';
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: $background-dark;
+}
+
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;    // 가로축은 가운데 정렬
+  justify-content: flex-start; // 세로축은 맨 위(시작점)로 정렬!
+  padding: 0;
+  width: 100%;
+}
+
+.page {
+  @include font-style($font-20, $weight-bold);
+  color: $text-primary;
+  width: 100%;
+}
+
+// 스타일 검증용 테스트 카드
+.test-card {
+  @include flex-column;
+  background-color: $card-bg;      
+  border: 1px solid $border-color; 
+  border-radius: $radius-lg;      
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+
+  @include mobile {
+    padding: 16px;
+  }
+}
+
+.title {
+  @include font-style($font-24, $weight-bold);
+  color: $primary-900 !important;  
+}
+
+.desc {
+  @include font-style($font-14, $weight-regular);
+  color: $text-secondary !important; 
+  margin-bottom: 20px;
+}
+
+.btn-primary {
+  @include flex-center;
+  @include font-style($font-16, $weight-semibold);
+  background-color: $primary-900;   
+  color: $color-black !important;    
+  border-radius: $radius-md;       
+  padding: 12px;
+}

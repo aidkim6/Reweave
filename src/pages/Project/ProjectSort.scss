@@ -1,0 +1,246 @@
+
+@import '../../styles/mixins';
+
+html {
+  overflow-y: scroll;
+}
+
+.project-sort-container {
+  display: flex;
+  flex-direction: column;
+
+  // StorageAdd와 동일한 컨테이너 구조
+  width: 768px;
+  min-height: 844px;
+  margin: 0 auto;
+  padding: 42px 0 120px;
+
+  // 별도 배경색을 지정하지 않아 StorageAdd와 동일하게 부모 배경 사용
+  color: $color-white;
+  box-sizing: border-box;
+  font-family: $font-family;
+
+  position: relative;
+
+  button, span, h1, div, p, li, ul {
+    font-family: $font-family;
+  }
+
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 22px;
+    padding: 15px 24px;
+    box-sizing: border-box;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      .back-btn {
+        padding: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img {
+          width: 28px;
+          height: 28px;
+        }
+      }
+
+      h1 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--Gray-7, #FBFDFB);
+        margin: 0;
+        letter-spacing: -2%;
+        line-height: 150%;
+        text-align: center;
+        font-family: Pretendard, sans-serif;
+      }
+    }
+
+    .save-btn {
+      background: none;
+      border: none;
+      font-size: 16px;
+      color: $primary-900;
+      cursor: pointer;
+      padding: 0;
+      font-weight: 600;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+
+  .form-content {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0 24px 80px;
+    box-sizing: border-box;
+
+    .sort-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+
+      .sort-item {
+        display: flex;
+        padding: 20px 0;
+        justify-content: space-between;
+        align-items: center;
+        align-self: stretch;
+        box-sizing: border-box;
+        border-bottom: 1px solid rgba(82, 87, 83, 0.50);
+        background-color: transparent;
+        user-select: none;
+        position: relative;
+
+        &.dragging {
+          background-color: #2b2d2b;
+          border-radius: 12px;
+          padding: 20px 16px;
+          box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.4);
+          opacity: 0.95;
+        }
+
+        .item-title {
+          color: #FFF;
+          font-size: 17px;
+          font-style: normal;
+          font-weight: 500;
+          line-height: 150%;
+          letter-spacing: -0.34px;
+          pointer-events: none;
+        }
+
+        .drag-handle {
+          background: none;
+          border: none;
+          padding: 10px;
+          margin: -10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: grab;
+          touch-action: none;
+
+          &:active {
+            cursor: grabbing;
+          }
+
+          img {
+            width: 26px;
+            height: 26px;
+            pointer-events: none;
+          }
+        }
+      }
+    }
+  }
+
+  /* StorageAdd와 동일한 나가기 팝업 */
+  .exit-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+
+    .exit-modal-card {
+      width: 285px;
+      height: 176px;
+      padding: 25px 23px;
+      background-color: $black-2;
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 25px rgba(#000000, 25%);
+      box-sizing: border-box;
+
+      .modal-text-group {
+        width: 100%;
+        margin-bottom: 28px;
+
+        .modal-description {
+          font-weight: 400;
+          font-size: 16px;
+          margin: 0;
+          line-height: 150%;
+          color: #FFF;
+
+          .highlight-text {
+            color: $primary-900;
+            font-weight: 600;
+          }
+        }
+      }
+
+      .modal-button-group {
+        display: flex;
+        gap: 6px;
+        width: 100%;
+
+        button {
+          flex: 1;
+          height: 42px;
+          border-radius: 100px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          border: none;
+        }
+
+        .exit-btn {
+          background-color: $black-2;
+          color: $gray-3;
+          border: 1px solid #52575380;
+        }
+
+        .cancel-btn {
+          background-color: #ffffff;
+          color: #1D1F1E;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    min-width: 0;
+    padding-top: 20px;
+
+    .form-header {
+      padding: 15px 20px;
+      margin-bottom: 12px;
+    }
+
+    .form-content {
+      padding: 0 20px 80px;
+    }
+
+    .exit-modal-overlay .exit-modal-card {
+      width: 285px;
+      max-width: calc(100vw - 32px);
+    }
+  }
+}

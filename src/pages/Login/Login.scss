@@ -1,0 +1,188 @@
+@import '../../styles/mixins';
+
+.login-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 120px 12px 40px;
+}
+
+.login-header {
+  margin-bottom: 40px;
+
+  .logo-img {
+    height: 44px;
+    object-fit: contain;
+  }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+// 이메일 & 비밀번호 통합 박스
+.input-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  width: 100%;
+
+  border-radius: 5px;
+  border: 1px solid rgba(82, 87, 83, 0.5);
+  background-color: #2b2d2b;
+  overflow: hidden;
+
+  .input-row {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    align-self: stretch;
+    width: 100%;
+    padding-right: 10px;
+
+    input {
+      width: 100%;
+      padding: 18px 10px;
+      background: transparent;
+      border: none;
+      color: #fbfdfb;
+      font-family: 'Pretendard', sans-serif;
+      letter-spacing: -0.4px;
+      @include font-style($font-14, $weight-regular);
+
+      &::placeholder {
+        color: #a9afa9;
+        letter-spacing: -0.4px;
+      }
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    .clear-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+
+      img {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+
+  .input-divider {
+    height: 1px;
+    width: 100%;
+    background-color: rgba(82, 87, 83, 0.5);
+  }
+}
+
+
+.login-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 0;
+  margin-top: 24px;
+
+  border-radius: 10px;
+  border: none;
+  background: #7ce924;
+
+  color: #1d1f1e;
+  text-align: center;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 150%;
+  letter-spacing: -0.36px;
+
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+
+.signup-link-container {
+  margin-top: 20px;
+
+  .signup-btn {
+    background: none;
+    border: none;
+    padding: 0;
+
+    color: #a9afa9;
+    text-align: center;
+    font-family: 'Pretendard', sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+
+    text-decoration-line: underline;
+    text-decoration-style: solid;
+    text-decoration-skip-ink: none;
+    text-decoration-thickness: auto;
+    text-underline-offset: auto;
+    text-underline-position: from-font;
+
+    cursor: pointer;
+  }
+}
+
+
+.error-snackbar {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  display: flex;
+  width: 342px;
+  padding: 11px 15px;
+  align-items: center;
+  gap: 8px;
+
+  border-radius: 8px;
+  background: #2b2d2b;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+
+  .alert-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  span {
+    color: #fff;
+    text-align: center;
+    font-family: 'Pretendard', sans-serif;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 150%; 
+    letter-spacing: -0.28px;
+  }
+}

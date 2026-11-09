@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Reweave",
+  "version": "0.1.0",
+  "description": "저장한 자료를 AI가 자동으로 분류하고 연결하는 세컨드 브레인 확장 프로그램",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:8080/*",
+    "http://13.209.7.3/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

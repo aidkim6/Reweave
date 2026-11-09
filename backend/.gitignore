@@ -35,3 +35,12 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### 비밀 설정 / 로그 ###
+.env
+application-local.yml
+*.log
+
+### OS ###
+.DS_Store
+Thumbs.db

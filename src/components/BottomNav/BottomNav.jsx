@@ -1,5 +1,5 @@
-import { NavLink, Link } from 'react-router-dom';
-import { navItems, addPath, addIcon } from './navConfig.js';
+import { NavLink } from 'react-router-dom';
+import { navItems, addIcon } from './navConfig.js';
 import './BottomNav.scss';
 
 function NavItem({ item }) {
@@ -24,7 +24,7 @@ function NavItem({ item }) {
   );
 }
 
-function BottomNav() {
+function BottomNav({ onAddClick }) {
   const left = navItems.slice(0, 2);
   const right = navItems.slice(2);
 
@@ -34,9 +34,14 @@ function BottomNav() {
         <NavItem key={item.to} item={item} />
       ))}
 
-      <Link to={addPath} className="bottom-nav-add">
-        <img src={addIcon} alt="" className="bottom-nav-add-icon" />
-      </Link>
+      {/* + 버튼 클릭 시 모달 오픈 함수 실행 */}
+      <button
+        type="button"
+        className="bottom-nav-add"
+        onClick={onAddClick}
+      >
+        <img src={addIcon} alt="링크 추가" className="bottom-nav-add-icon" />
+      </button>
 
       {right.map((item) => (
         <NavItem key={item.to} item={item} />
