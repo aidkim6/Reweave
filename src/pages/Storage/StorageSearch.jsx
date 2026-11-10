@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import backIcon from '../../assets/back-arrow.svg';
 import searchIcon from '../../assets/storage/search.svg';
-import logo from '../../assets/icon.svg';
+import logo from '@/assets/icon.svg';
 import './StorageSearch.scss';
 import { api } from '../../features/client';
 function StorageSearch() {
