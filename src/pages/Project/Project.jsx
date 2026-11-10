@@ -6,7 +6,7 @@ import upIcon from '../../assets/project/up.svg';
 import downIcon from '../../assets/project/down.svg';
 import checkIcon from '../../assets/project/check.svg';
 import moreCIcon from '../../assets/project/more_c.svg';
-import markIcon from '../../assets/icon.svg';
+import markIcon from '@/assets/icon.svg';
 import editIcon from '../../assets/project/edit.svg';
 import deleteIcon from '../../assets/project/delete.svg';
 import addIcon from '../../assets/project/add.svg';
