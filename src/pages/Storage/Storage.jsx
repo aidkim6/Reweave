@@ -7,7 +7,7 @@ import del from '../../assets/storage/delete.svg';
 import edit from '../../assets/storage/edit.svg';
 import moreH from '../../assets/storage/moreH.svg';
 import order from '../../assets/storage/order.svg';
-import defaultLogo from '../../assets/icon.svg';
+import defaultLogo from '@/assets/icon.svg';
 import { api } from '../../features/client';
 import './Storage.scss';
 

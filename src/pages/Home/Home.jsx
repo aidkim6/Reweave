@@ -6,7 +6,7 @@ import './Home.scss';
 
 import logoIcon from '../../assets/logo.svg';
 import arrowRightIcon from '../../assets/arrowbotton.svg';
-import defaultIcon from '../../assets/Icon.svg';
+import defaultIcon from '@/assets/Icon.svg';
 import leftArrowIcon from '../../assets/home/left.svg';
 import rightArrowIcon from '../../assets/home/right.svg';
 
