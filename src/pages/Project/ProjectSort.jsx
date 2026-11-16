@@ -106,7 +106,7 @@ const ProjectSort = ({ projectList = [], onClose, onSave }) => {
           <button className="back-btn" onClick={handleBackClick} type="button">
             <img src={backIcon} alt="뒤로가기" />
           </button>
-          <h1>프로젝트 순서 편집</h1>
+          <h1>순서 정렬하기</h1>
         </div>
         <button className="save-btn" onClick={handleSave} type="button">
           저장

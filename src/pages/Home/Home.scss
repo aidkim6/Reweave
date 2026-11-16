@@ -7,11 +7,11 @@ html {
 .home-container {
   display: flex;
   flex-direction: column;
-  width: 100%;                 
+  width: 100%;
   min-height: 844px;
   margin: 0;
   padding: 42px 0 120px;
-  align-items: center; 
+  align-items: center;
   color: #fbfdfb;
   position: relative;
   box-sizing: border-box;
@@ -40,7 +40,7 @@ html {
   flex: 1;
   width: 100%;
   max-width: 720px;
-  margin: 0 auto;              
+  margin: 0 auto;
   padding: 0 24px;
   display: flex;
   flex-direction: column;
@@ -48,8 +48,21 @@ html {
   box-sizing: border-box;
 
   scrollbar-width: none;
+
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+.empty-message {
+  color: #8E8E8E;
+  font-size: 14px;
+  margin: 0;
+  width: 100%;
+  grid-column: 1 / -1;
+
+  @media (min-width: 769px) {
+    text-align: center;
   }
 }
 
@@ -92,7 +105,6 @@ html {
     width: 100%;
     margin-left: 0;
 
-
     .slider-arrow {
       display: none;
 
@@ -110,8 +122,8 @@ html {
         border: none;
         cursor: pointer;
         z-index: 10;
-        opacity: 0; 
-        transition: opacity 0.2s ease-in-out; 
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
 
         img {
           width: 68px;
@@ -120,11 +132,11 @@ html {
         }
 
         &.left {
-          left: -34px; 
+          left: -34px;
         }
 
         &.right {
-          right: -34px; 
+          right: -34px;
         }
       }
     }
@@ -138,7 +150,7 @@ html {
     .card-slider {
       display: flex;
       gap: 12px;
-      padding: 0; 
+      padding: 0;
       overflow-x: auto;
       scroll-snap-type: x mandatory;
       width: 100%;
@@ -146,10 +158,15 @@ html {
 
       scrollbar-width: none;
       -ms-overflow-style: none;
+
       &::-webkit-scrollbar {
         display: none !important;
         width: 0 !important;
         height: 0 !important;
+      }
+
+      .empty-message {
+        padding: 20px 0;
       }
 
       .today-card {
@@ -163,27 +180,60 @@ html {
         padding: 24px;
         border-radius: 15px;
         box-sizing: border-box;
-        
+
+        background-color: #212121;
         background-size: cover !important;
         background-position: center !important;
         background-repeat: no-repeat !important;
-        background-color: #2b2d2b;
-        
+
+        border: 1px solid transparent;
+        background-clip: padding-box;
+
         scroll-snap-align: center;
         overflow: hidden;
         position: relative;
+        isolation: isolate;
+
+        .today-card-bg {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+          z-index: 0;
+          pointer-events: none;
+          border-radius: 0;
+        }
 
         &::after {
           content: '';
           position: absolute;
-          inset: 0;
-          background: linear-gradient(180deg, rgba(33, 33, 33, 0.2) 0%, rgba(33, 33, 33, 0.9) 92.31%);
+          inset: -2px;
+          background: linear-gradient(
+            180deg,
+            rgba(33, 33, 33, 0.2) 0%,
+            rgba(33, 33, 33, 0.9) 85%,
+            #212121 95%,
+            #212121 100%
+          );
           z-index: 1;
+          pointer-events: none;
+        }
+
+        &::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 14px;
+          box-shadow: inset 0 -2px 0 #212121;
+          z-index: 2;
+          pointer-events: none;
         }
 
         .card-info {
           position: relative;
-          z-index: 2;
+          z-index: 3;
           width: 100%;
 
           h4 {
@@ -238,6 +288,7 @@ html {
 
     scrollbar-width: none;
     -ms-overflow-style: none;
+
     &::-webkit-scrollbar {
       display: none !important;
       width: 0 !important;
@@ -357,7 +408,7 @@ html {
         display: flex;
         width: 74px;
         height: 74px;
-        padding: 15px;
+        padding: 0;
         justify-content: center;
         align-items: center;
         border-radius: 10px;
@@ -367,8 +418,8 @@ html {
         overflow: hidden;
 
         .icon-img {
-          width: 100%;
-          height: 100%;
+          width: 44px;
+          height: 44px;
           object-fit: contain;
         }
 

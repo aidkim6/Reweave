@@ -12,6 +12,9 @@ import rightArrowIcon from '../../assets/home/right.svg';
 
 const Home = () => {
   const sliderRef = useRef(null);
+  const autoSlideTimerRef = useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
+
   const navigate = useNavigate();
   const [nickname, setNickname] = useState('사용자');
   const [recentLinks, setRecentLinks] = useState([]);
@@ -31,7 +34,6 @@ const Home = () => {
 
     const headers = { Authorization: `Bearer ${token}` };
 
-
     try {
       const userRes = await axios.get('/api/users/me', { headers });
       if (userRes.data && userRes.data.data && userRes.data.data.nickname) {
@@ -41,11 +43,10 @@ const Home = () => {
       console.error('유저 정보를 불러오지 못했습니다.', error);
     }
 
-
     try {
       const recallRes = await axios.get('/api/ai/recalls', { headers });
       const rawRecalls = recallRes.data?.data || recallRes.data || [];
-      
+
       const formattedRecalls = rawRecalls.map((card) => ({
         purposeGroupId: card.purposeGroupId || card.projectId,
         purposeName: card.purposeName || card.projectTitle,
@@ -53,14 +54,13 @@ const Home = () => {
         title: card.title,
         thumbnailUrl: card.thumbnailUrl || (card.thumbnails && card.thumbnails[0]) || '',
         url: card.url,
-        recallHeadline: card.recallHeadline || card.recommendReason || '저장된 링크를 다시 확인해보세요'
+        recallHeadline: card.recallHeadline || card.recommendReason || '저장된 링크를 다시 확인해보세요',
       }));
 
       setRecallCards(formattedRecalls);
     } catch (error) {
       console.error('AI 리콜 카드를 불러오지 못했습니다.', error);
     }
-
 
     try {
       const bookmarkRes = await axios.get('/api/bookmarks?size=6', { headers });
@@ -70,7 +70,6 @@ const Home = () => {
     } catch (error) {
       console.error('최근 저장한 링크를 불러오지 못했습니다.', error);
     }
-
 
     try {
       const projectRes = await axios.get('/api/purpose-groups?status=IN_PROGRESS', { headers });
@@ -108,13 +107,55 @@ const Home = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (recallCards.length <= 1 || isPaused) return;
+
+    autoSlideTimerRef.current = setInterval(() => {
+      const slider = sliderRef.current;
+      if (!slider) return;
+
+      const cardStep = 278;
+      const maxScrollLeft = slider.scrollWidth - slider.clientWidth;
+
+      if (slider.scrollLeft >= maxScrollLeft - 5) {
+        slider.scrollTo({
+          left: 0,
+          behavior: 'smooth',
+        });
+      } else {
+        slider.scrollBy({
+          left: cardStep,
+          behavior: 'smooth',
+        });
+      }
+    }, 3000);
+
+    return () => {
+      if (autoSlideTimerRef.current) {
+        clearInterval(autoSlideTimerRef.current);
+      }
+    };
+  }, [recallCards, isPaused]);
+
   const handleScroll = (direction) => {
-    if (sliderRef.current) {
-      const scrollAmount = 300;
-      sliderRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
+    const slider = sliderRef.current;
+    if (!slider) return;
+
+    const cardStep = 278;
+    const maxScrollLeft = slider.scrollWidth - slider.clientWidth;
+
+    if (direction === 'right') {
+      if (slider.scrollLeft >= maxScrollLeft - 5) {
+        slider.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        slider.scrollBy({ left: cardStep, behavior: 'smooth' });
+      }
+    } else {
+      if (slider.scrollLeft <= 5) {
+        slider.scrollTo({ left: maxScrollLeft, behavior: 'smooth' });
+      } else {
+        slider.scrollBy({ left: -cardStep, behavior: 'smooth' });
+      }
     }
   };
 
@@ -141,8 +182,13 @@ const Home = () => {
             </h2>
           </div>
 
-
-          <div className={`slider-wrapper ${recallCards.length >= 3 ? 'has-arrows' : ''}`}>
+          <div
+            className={`slider-wrapper ${recallCards.length >= 3 ? 'has-arrows' : ''}`}
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            onTouchStart={() => setIsPaused(true)}
+            onTouchEnd={() => setIsPaused(false)}
+          >
             {recallCards.length >= 3 && (
               <button
                 className="slider-arrow left"
@@ -174,7 +220,7 @@ const Home = () => {
                   </div>
                 ))
               ) : (
-                <div style={{ color: '#8E8E8E', fontSize: '14px', padding: '20px 0' }}>
+                <div className="empty-message">
                   오늘 추천된 리콜 카드가 없어요.
                 </div>
               )}
@@ -191,7 +237,6 @@ const Home = () => {
             )}
           </div>
         </section>
-
 
         <section className="section project-section">
           <div className="section-header">
@@ -220,13 +265,12 @@ const Home = () => {
                 </div>
               ))
             ) : (
-              <p style={{ color: '#8E8E8E', fontSize: '14px', gridColumn: 'span 2' }}>
+              <p className="empty-message">
                 진행 중인 프로젝트가 없어요.
               </p>
             )}
           </div>
         </section>
-
 
         <section className="section recent-section">
           <div className="section-header">
@@ -255,7 +299,7 @@ const Home = () => {
                 </div>
               ))
             ) : (
-              <p style={{ color: '#8E8E8E', fontSize: '14px' }}>최근 저장한 링크가 없어요.</p>
+              <p className="empty-message">최근 저장한 링크가 없어요.</p>
             )}
           </div>
         </section>

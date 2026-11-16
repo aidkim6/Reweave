@@ -1,5 +1,10 @@
 @import '../../styles/main.scss';
-@import url('https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/variable/woff2/SUITE-Variable.css');
+
+@media (min-width: 768px) {
+    .mypage-modal-overlay .modal .modal-text {
+        text-align: center;
+    }
+}
 
 .mypage-wrap {
     width: 100%;
@@ -8,7 +13,6 @@
     flex-direction: column;
     padding-top: 42px;
     align-items: center;
-    font-family: 'SUITE Variable', sans-serif; // 페이지 전체에 폰트 적용
 
     .mypage-title {
         width: 768px;

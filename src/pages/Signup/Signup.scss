@@ -12,17 +12,15 @@
   box-sizing: border-box;
 }
 
-
 .signup-header {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  align-self: flex-start;
-  width: calc(100% + 25px);
-  margin-left: -25px;
-  height: 48px;
-  gap: 5px;
+  width: 342px;
+  height: 60px;
+  gap: 8px;
   margin-bottom: 24px;
+  box-sizing: border-box;
 
   .back-btn {
     display: flex;
@@ -73,7 +71,6 @@
     margin-bottom: 10px;
   }
 
-
   .field-guide {
     color: var(--Gray-5, #E8EBE7);
     font-family: 'Pretendard', sans-serif;
@@ -85,7 +82,6 @@
     margin-top: 2px;
     margin-bottom: 12px;
   }
-
 
   .input-box {
     display: flex;
@@ -132,20 +128,18 @@
       }
     }
 
-    
     input[type='password'] {
       font-size: 14px;
-      letter-spacing: -0.4px; 
+      letter-spacing: -0.4px;
 
       &:not(:placeholder-shown) {
-        letter-spacing: 4px; 
+        letter-spacing: 4px;
       }
 
       &::placeholder {
         letter-spacing: -0.4px;
       }
     }
-
 
     input[type='text'] {
       letter-spacing: 0px;
@@ -175,7 +169,6 @@
       }
     }
 
-
     &.error {
       border-radius: 10px;
       border: 1px solid var(--point-red-stroke, rgba(233, 67, 67, 0.50));
@@ -191,7 +184,6 @@
     margin-top: 6px;
   }
 }
-
 
 .bottom-area {
   display: flex;
@@ -265,11 +257,11 @@
 }
 
 @media (min-width: 768px) {
-    .signup-container {
-    padding-top: 50px; 
+  .signup-container {
+    padding-top: 50px;
   }
 
   .bottom-area {
-    margin-top: 40px;   
+    margin-top: 40px;
   }
 }

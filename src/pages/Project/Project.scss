@@ -11,7 +11,7 @@ html {
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: 844px;
+  min-height: 100vh;
   margin: 0;
   padding: 42px 0 120px;
   color: #fbfdfb;
@@ -263,23 +263,76 @@ html {
     }
   }
 
+  .empty-project-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        padding-top: 16px;
+        box-sizing: border-box;
+        text-align: center;
+
+        .empty-project-icon {
+            display: block;
+            width: 138.65px;
+            height: 149.87px;
+            object-fit: contain;
+            margin-bottom: 20px;
+        }
+
+        .create-project-btn {
+            padding: 10px 15px;
+            border: 0;
+            border-radius: 100px;
+            background: #fff;
+            color: #1A1C1B;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 150%;
+            cursor: pointer;
+        }
+
+        .empty-project-desc {
+            margin-top: 10px;
+            color: $gray-2;
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 150%;
+            letter-spacing: -0.26px;
+        }
+    }
+
   .project-grid-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     padding: 0;
     width: 100%;
     box-sizing: border-box;
 
     .project-grid {
+      flex: 1;
       display: grid;
       grid-template-columns: repeat(4, 162px);
       gap: 24px;
       width: 720px;
+
+      .empty-project-message {
+        color: #929292;
+        font-size: 14px;
+        grid-column: 1 / -1;
+        width: 100%;
+        padding: 40px 0;
+        text-align: center;
+      }
+
+      
 
       .project-item-card {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
         min-width: 0;
-
 
         .thumbnail-box.thumb {
           position: relative;
@@ -499,7 +552,6 @@ html {
     }
   }
 
-
   .modal-dim {
     position: fixed;
     inset: 0;
@@ -565,6 +617,7 @@ html {
   .project-container {
     width: 100%;
     min-width: 0;
+    min-height: 844px;
     padding: 20px 0 120px;
     align-items: stretch;
 
@@ -584,11 +637,32 @@ html {
       gap: 16px 12px;
       width: 100%;
 
+      
+
       .project-item-card .thumbnail-box.thumb {
         width: 100%;
         height: auto;
         aspect-ratio: 1 / 1;
       }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .project-container:has(.empty-project-state) {
+    min-height: 100dvh;
+    .project-content {
+      flex: 1;
+    }
+    .empty-project-state {
+      flex: 1;
+      justify-content: center;
+      padding: 24px 20px;
+
+      // 모바일 보관함과 빈 화면의 세로 위치 통일
+      transform: translateY(-40px);
+      > * { flex-shrink: 0; }
+      .empty-project-desc { margin-bottom: 0; }
     }
   }
 }
