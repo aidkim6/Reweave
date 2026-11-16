@@ -11,6 +11,7 @@ import editIcon from '../../assets/project/edit.svg';
 import deleteIcon from '../../assets/project/delete.svg';
 import addIcon from '../../assets/project/add.svg';
 import sortIcon from '../../assets/project/sort.svg';
+import newProjectIcon from '../../assets/project/new.svg';
 
 import ProjectForm from './ProjectForm';
 import ProjectSort from './ProjectSort';
@@ -21,6 +22,8 @@ import './Project.scss';
 const Project = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isLoggedIn = Boolean(localStorage.getItem('accessToken'));
 
   const [viewMode, setViewMode] = useState('list');
   const [editingProject, setEditingProject] = useState(null);
@@ -41,13 +44,13 @@ const Project = () => {
   const statusToApi = {
     '시작 전': 'NOT_STARTED',
     '진행 중': 'IN_PROGRESS',
-    '완료': 'COMPLETED'
+    '완료': 'COMPLETED',
   };
 
   const statusFromApi = {
-    'NOT_STARTED': { text: '시작 전', class: 'before-start' },
-    'IN_PROGRESS': { text: '진행 중', class: 'in-progress' },
-    'COMPLETED': { text: '완료', class: 'completed' }
+    NOT_STARTED: { text: '시작 전', class: 'before-start' },
+    IN_PROGRESS: { text: '진행 중', class: 'in-progress' },
+    COMPLETED: { text: '완료', class: 'completed' },
   };
 
   const [rawProjectList, setRawProjectList] = useState([]);
@@ -66,8 +69,8 @@ const Project = () => {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
 
       if (!response.ok) throw new Error('프로젝트 목록을 불러오지 못했습니다.');
@@ -76,8 +79,13 @@ const Project = () => {
       const rawData = result.data || [];
 
       const formattedList = rawData.map((item) => {
-        const mappedStatus = statusFromApi[item.status] || { text: '진행 중', class: 'in-progress' };
-        const tags = item.categories ? item.categories.map((c) => `#${c.categoryName || c.name}`) : [];
+        const mappedStatus = statusFromApi[item.status] || {
+          text: '진행 중',
+          class: 'in-progress',
+        };
+        const tags = item.categories
+          ? item.categories.map((c) => `#${c.categoryName || c.name}`)
+          : [];
 
         return {
           id: item.purposeGroupId,
@@ -112,7 +120,9 @@ const Project = () => {
           .filter((c) => c.selected && c.id !== 'all')
           .map((c) => c.id);
 
-        const newCategoryList = [{ id: 'all', name: '전체', selected: currentSelectedIds.length === 0 }];
+        const newCategoryList = [
+          { id: 'all', name: '전체', selected: currentSelectedIds.length === 0 },
+        ];
 
         extractedCategoriesMap.forEach((name, id) => {
           newCategoryList.push({
@@ -128,7 +138,6 @@ const Project = () => {
 
         return newCategoryList;
       });
-
     } catch (error) {
       console.error('프로젝트 조회 에러:', error);
     }
@@ -160,16 +169,24 @@ const Project = () => {
     setCategories((prevCategories) => {
       let updated;
       if (id === 'all') {
-        updated = prevCategories.map((cat) => ({ ...cat, selected: cat.id === 'all' }));
+        updated = prevCategories.map((cat) => ({
+          ...cat,
+          selected: cat.id === 'all',
+        }));
       } else {
         updated = prevCategories.map((cat) => {
           if (cat.id === 'all') return { ...cat, selected: false };
           if (cat.id === id) return { ...cat, selected: !cat.selected };
           return cat;
         });
-        const hasSelected = updated.some((cat) => cat.id !== 'all' && cat.selected);
+        const hasSelected = updated.some(
+          (cat) => cat.id !== 'all' && cat.selected
+        );
         if (!hasSelected) {
-          updated = updated.map((cat) => ({ ...cat, selected: cat.id === 'all' }));
+          updated = updated.map((cat) => ({
+            ...cat,
+            selected: cat.id === 'all',
+          }));
         }
       }
       return updated;
@@ -182,17 +199,35 @@ const Project = () => {
     fetchProjects();
   };
 
-  const handleSortSave = (updatedList) => {
-    setProjectList(updatedList);
-    setViewMode('list');
-    fetchProjects();
+  const handleSortSave = async (updatedList) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const orderedIds = updatedList.map((item) => item.id);
+
+      const response = await fetch('/api/purpose-groups/order', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ purposeGroupIds: orderedIds }),
+      });
+
+      if (!response.ok) throw new Error('순서 저장에 실패했습니다.');
+
+      setProjectList(updatedList);
+      setViewMode('list');
+      fetchProjects();
+    } catch (error) {
+      console.error('프로젝트 순서 저장 에러:', error);
+      alert(error.message);
+    }
   };
 
   const handleCardClick = (project) => {
     setSelectedProject(project);
     setViewMode('detail');
   };
-
 
   const handleDeleteProject = async () => {
     if (!deleteTarget) return;
@@ -202,8 +237,8 @@ const Project = () => {
       const response = await fetch(`/api/purpose-groups/${deleteTarget.id}`, {
         method: 'DELETE',
         headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
 
       if (!response.ok) throw new Error('삭제에 실패했습니다.');
@@ -235,7 +270,7 @@ const Project = () => {
   if (viewMode === 'sort') {
     return (
       <ProjectSort
-        projectList={projectList}
+        projectList={rawProjectList}
         onClose={() => setViewMode('list')}
         onSave={handleSortSave}
       />
@@ -251,6 +286,9 @@ const Project = () => {
     );
   }
 
+  const isInitialLoggedInEmpty =
+    isLoggedIn && rawProjectList.length === 0 && statusFilter === '전체';
+
   return (
     <div
       className="project-container"
@@ -262,7 +300,6 @@ const Project = () => {
       <header className="project-header">
         <h1>프로젝트</h1>
         <div className="header-icons">
-
           <button
             className="icon-btn"
             type="button"
@@ -380,9 +417,36 @@ const Project = () => {
         <section className="project-grid-section">
           <div className="project-grid">
             {projectList.length === 0 ? (
-              <div style={{ color: '#929292', textAlign: 'center', gridColumn: 'span 2', padding: '40px 0' }}>
-                해당 조건의 프로젝트가 없습니다.
-              </div>
+              isInitialLoggedInEmpty ? (
+                <div className="empty-project-state">
+                  <img
+                    src={newProjectIcon}
+                    alt="프로젝트 없음"
+                    className="empty-project-icon"
+                  />
+                  <div className="empty-project-actions">
+                    <button
+                      type="button"
+                      className="create-project-btn"
+                      onClick={() => {
+                        setEditingProject(null);
+                        setViewMode('create');
+                      }}
+                    >
+                      프로젝트 생성하기
+                    </button>
+                    <p className="empty-project-desc">
+                      생성된 프로젝트가 없습니다. 버튼을 클릭하여
+                      <br />
+                      새 카테고리를 생성해주세요
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="empty-project-message">
+                  해당 조건의 프로젝트가 없습니다.
+                </div>
+              )
             ) : (
               projectList.map((item) => (
                 <div
@@ -393,14 +457,23 @@ const Project = () => {
                 >
                   <div className="thumbnail-box thumb">
                     {item.thumbnails && item.thumbnails.length > 0 ? (
-                      <div className={`thumb-grid thumb-${Math.min(item.thumbnails.length, 4)}`}>
+                      <div
+                        className={`thumb-grid thumb-${Math.min(
+                          item.thumbnails.length,
+                          4
+                        )}`}
+                      >
                         {item.thumbnails.slice(0, 4).map((src, i) => (
                           <img key={i} src={src} alt="" className="thumb-img" />
                         ))}
                       </div>
                     ) : (
                       <div className="default-thumb-box">
-                        <img src={markIcon} alt="기본 로고" className="default-logo-img" />
+                        <img
+                          src={markIcon}
+                          alt="기본 로고"
+                          className="default-logo-img"
+                        />
                       </div>
                     )}
                   </div>
@@ -437,7 +510,11 @@ const Project = () => {
                               }}
                               type="button"
                             >
-                              <img src={editIcon} alt="수정하기" className="action-icon" />
+                              <img
+                                src={editIcon}
+                                alt="수정하기"
+                                className="action-icon"
+                              />
                               <span>수정하기</span>
                             </button>
                             <button
@@ -449,7 +526,11 @@ const Project = () => {
                               }}
                               type="button"
                             >
-                              <img src={deleteIcon} alt="삭제하기" className="action-icon" />
+                              <img
+                                src={deleteIcon}
+                                alt="삭제하기"
+                                className="action-icon"
+                              />
                               <span>삭제하기</span>
                             </button>
                           </div>
@@ -478,7 +559,6 @@ const Project = () => {
         </section>
       </main>
 
-
       {deleteTarget && (
         <div className="modal-dim" onClick={() => setDeleteTarget(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
@@ -488,10 +568,18 @@ const Project = () => {
               삭제하시겠습니까?
             </p>
             <div className="modal-btns">
-              <button type="button" className="btn-cancel" onClick={() => setDeleteTarget(null)}>
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => setDeleteTarget(null)}
+              >
                 취소
               </button>
-              <button type="button" className="btn-delete" onClick={handleDeleteProject}>
+              <button
+                type="button"
+                className="btn-delete"
+                onClick={handleDeleteProject}
+              >
                 삭제
               </button>
             </div>

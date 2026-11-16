@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './SaveLinkModal.scss';
 import plusIcon from '../../assets/plus.svg';
@@ -7,6 +8,8 @@ import closeIcon from '../../assets/home/x.svg';
 
 const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [url, setUrl] = useState('');
   const [categories, setCategories] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -16,11 +19,18 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
   const fetchCategories = async (selectId = null) => {
     try {
       const token = localStorage.getItem('accessToken');
+
       const response = await axios.get('/api/categories', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.data && response.data.data && response.data.data.categories) {
+
+      if (
+        response.data &&
+        response.data.data &&
+        response.data.data.categories
+      ) {
         setCategories(response.data.data.categories);
+
         if (selectId !== null) {
           setSelectedCategoryId(selectId);
         }
@@ -31,7 +41,7 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
   };
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || location.pathname === '/storage/add') return;
 
     const savedNewCatId = sessionStorage.getItem('newCategoryId');
     const tempUrl = sessionStorage.getItem('tempSaveUrl');
@@ -60,12 +70,16 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
     }
 
     setErrorMsg('');
-  }, [isOpen]);
+  }, [isOpen, location.pathname]);
 
-  if (!isOpen) return null;
+  // 카테고리 추가 화면에서는 링크 저장 모달 표시하지 않음
+  if (!isOpen || location.pathname === '/storage/add') {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!url.trim()) {
       setErrorMsg('링크 주소를 입력해주세요.');
       return;
@@ -73,7 +87,7 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      
+
       if (!token) {
         setErrorMsg('로그인이 필요합니다.');
         return;
@@ -85,9 +99,9 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
           url: url.trim(),
           memo: memo.trim() || null,
           categoryId: selectedCategoryId,
-          saveSource: 'URL_INPUT', 
-          title: url.trim(), 
-          content: '',       
+          saveSource: 'URL_INPUT',
+          title: url.trim(),
+          content: '',
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -95,26 +109,49 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
       );
 
       if (onSaveSuccess) onSaveSuccess();
+
       onClose();
     } catch (error) {
       console.error('북마크 저장 실패:', error);
-      setErrorMsg(error.response?.data?.message || '저장에 실패했어요. 다시 시도해주세요.');
+
+      setErrorMsg(
+        error.response?.data?.message ||
+          '저장에 실패했어요. 다시 시도해주세요.'
+      );
     }
   };
 
+  // 카테고리 추가 버튼 클릭
   const handleAddCategoryClick = () => {
-    navigate('/storage/add', { 
-      state: { 
-        fromModal: true, 
-        modalData: { url, memo } 
-      } 
+    // 기존 입력값 저장
+    const modalData = { url, memo };
+
+    sessionStorage.setItem('tempSaveUrl', url);
+    sessionStorage.setItem('tempSaveMemo', memo);
+
+    // 링크 저장 모달 닫기
+    onClose();
+
+    // 카테고리 추가 페이지로 이동
+    navigate('/storage/add', {
+      state: {
+        fromModal: true,
+        modalData,
+      },
     });
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="modal-close-btn" onClick={onClose}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="modal-close-btn"
+          onClick={onClose}
+        >
           <img src={closeIcon} alt="닫기" />
         </button>
 
@@ -137,8 +174,9 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
           <div className="form-group">
             <div className="section-header">
               <label className="form-label">카테고리</label>
-              <button 
-                type="button" 
+
+              <button
+                type="button"
                 className="category-add-btn"
                 onClick={handleAddCategoryClick}
               >
@@ -162,9 +200,13 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
                   key={cat.categoryId}
                   type="button"
                   className={`category-chip ${
-                    selectedCategoryId === cat.categoryId ? 'active' : ''
+                    selectedCategoryId === cat.categoryId
+                      ? 'active'
+                      : ''
                   }`}
-                  onClick={() => setSelectedCategoryId(cat.categoryId)}
+                  onClick={() =>
+                    setSelectedCategoryId(cat.categoryId)
+                  }
                 >
                   {cat.categoryName}
                 </button>
@@ -174,6 +216,7 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
 
           <div className="form-group">
             <label className="form-label">메모</label>
+
             <textarea
               className="modal-textarea"
               placeholder="간단한 메모를 입력해주세요"
@@ -182,7 +225,17 @@ const SaveLinkModal = ({ isOpen, onClose, onSaveSuccess }) => {
             />
           </div>
 
-          {errorMsg && <p style={{ color: '#ff4d4d', fontSize: '13px', marginBottom: '12px' }}>{errorMsg}</p>}
+          {errorMsg && (
+            <p
+              style={{
+                color: '#ff4d4d',
+                fontSize: '13px',
+                marginBottom: '12px',
+              }}
+            >
+              {errorMsg}
+            </p>
+          )}
 
           <button type="submit" className="save-submit-btn">
             저장하기
