@@ -11,7 +11,7 @@ import editIcon from '../../assets/project/edit.svg';
 import deleteIcon from '../../assets/project/delete.svg';
 import addIcon from '../../assets/project/add.svg';
 import sortIcon from '../../assets/project/sort.svg';
-import newProjectIcon from '../../assets/project/new.svg';
+import newProjectIcon from '../../assets/storage/empty-icon.svg';
 
 import ProjectForm from './ProjectForm';
 import ProjectSort from './ProjectSort';
@@ -54,11 +54,20 @@ const Project = () => {
   };
 
   const [rawProjectList, setRawProjectList] = useState([]);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [projectList, setProjectList] = useState([]);
 
   const fetchProjects = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setRawProjectList([]);
+      setProjectList([]);
+      setProjectsLoaded(false);
+      return;
+    }
+
+    setProjectsLoaded(false);
     try {
-      const token = localStorage.getItem('accessToken');
 
       let queryUrl = '/api/purpose-groups';
       if (statusFilter !== '전체') {
@@ -101,6 +110,7 @@ const Project = () => {
       });
 
       setRawProjectList(formattedList);
+      setProjectsLoaded(true);
 
       const extractedCategoriesMap = new Map();
       formattedList.forEach((item) => {
@@ -145,7 +155,7 @@ const Project = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, [statusFilter]);
+  }, [statusFilter, isLoggedIn]);
 
   useEffect(() => {
     const selectedCategoryIds = categories
@@ -286,8 +296,8 @@ const Project = () => {
     );
   }
 
-  const isInitialLoggedInEmpty =
-    isLoggedIn && rawProjectList.length === 0 && statusFilter === '전체';
+  const isLoggedInEmpty =
+    isLoggedIn && projectsLoaded && projectList.length === 0;
 
   return (
     <div
@@ -414,39 +424,31 @@ const Project = () => {
           )}
         </section>
 
+        {!isLoggedIn ? (
+          <section className="project-grid-section">
+            <div className="project-grid">
+              <div className="empty-project-message">생성된 프로젝트가 없습니다.</div>
+            </div>
+          </section>
+        ) : isLoggedInEmpty ? (
+          <section className="empty-project-state">
+            <img src={newProjectIcon} alt="프로젝트 없음" className="empty-project-icon" />
+            <button type="button" className="create-project-btn" onClick={() => {
+              setEditingProject(null);
+              setViewMode('create');
+            }}>
+              프로젝트 생성하기
+            </button>
+            <p className="empty-project-desc">
+              생성된 프로젝트가 없습니다. 버튼을 클릭하여<br />
+              새 카테고리를 생성해주세요
+            </p>
+          </section>
+        ) : (
         <section className="project-grid-section">
           <div className="project-grid">
             {projectList.length === 0 ? (
-              isInitialLoggedInEmpty ? (
-                <div className="empty-project-state">
-                  <img
-                    src={newProjectIcon}
-                    alt="프로젝트 없음"
-                    className="empty-project-icon"
-                  />
-                  <div className="empty-project-actions">
-                    <button
-                      type="button"
-                      className="create-project-btn"
-                      onClick={() => {
-                        setEditingProject(null);
-                        setViewMode('create');
-                      }}
-                    >
-                      프로젝트 생성하기
-                    </button>
-                    <p className="empty-project-desc">
-                      생성된 프로젝트가 없습니다. 버튼을 클릭하여
-                      <br />
-                      새 카테고리를 생성해주세요
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="empty-project-message">
-                  해당 조건의 프로젝트가 없습니다.
-                </div>
-              )
+              null
             ) : (
               projectList.map((item) => (
                 <div
@@ -557,6 +559,7 @@ const Project = () => {
             )}
           </div>
         </section>
+        )}
       </main>
 
       {deleteTarget && (
