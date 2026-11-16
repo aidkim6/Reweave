@@ -7,7 +7,8 @@ import del from '../../assets/storage/delete.svg';
 import edit from '../../assets/storage/edit.svg';
 import moreH from '../../assets/storage/moreH.svg';
 import order from '../../assets/storage/order.svg';
-import defaultLogo from '@/assets/icon.svg';
+import defaultLogo from '../../assets/icon.svg';
+import empty from '../../assets/storage/empty-icon.svg';
 import { api } from '../../features/client';
 import './Storage.scss';
 
@@ -19,6 +20,7 @@ function Storage() {
 
     const [tab, setTab] = useState('my');
     const [categories, setCategories] = useState([]);
+    const [categoriesLoaded, setCategoriesLoaded] = useState(false);
     const [defaults, setDefaults] = useState(null);
     const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
     const [cardMenuId, setCardMenuId] = useState(null);
@@ -47,6 +49,7 @@ function Storage() {
             const res = await api.get('/api/categories');
             const data = res.data.data ?? res.data;
             setCategories(data.categories.map(toView));
+            setCategoriesLoaded(true);
         } catch (e) {
             console.log('카테고리 목록 실패', e.response?.status, e.response?.data);
         }
@@ -163,7 +166,20 @@ function Storage() {
                 </h3>
             </div>
 
-            {tab === 'my' && (
+            {tab === 'my' && categoriesLoaded && categories.length === 0 && (
+                <section className="storage-empty">
+                    <img className="storage-empty-icon" src={empty} alt="" />
+                    <button className="storage-empty-button" type="button" onClick={goAdd}>
+                        카테고리 생성하기
+                    </button>
+                    <p className="storage-empty-description">
+                        카테고리가 비어있습니다 버튼을 클릭하여<br />
+                        새 카테고리를 생성해주세요
+                    </p>
+                </section>
+            )}
+
+            {tab === 'my' && categories.length > 0 && (
                 <div className="category-main">
                     {categories.map((cate) => (
                         <div

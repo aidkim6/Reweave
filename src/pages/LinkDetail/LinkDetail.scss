@@ -467,6 +467,10 @@
   // 768px 이상에서 가운데 720px 영역(768px - 좌우 24px)으로 보여요.
   // ==========================================================
   @media (min-width: 768px) {
+    .link-dialog p {
+      text-align: center;
+    }
+
     max-width: 768px;
     padding-top: 41px;
 

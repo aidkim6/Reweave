@@ -4,8 +4,9 @@ import backIcon from '../../assets/back-arrow.svg';
 import searchIcon from '../../assets/storage/search.svg';
 import moreIcon from '../../assets/storage/moreW.svg';
 import select from '../../assets/storage/select.svg';
-import down from '../../assets/storage/down.svg';
-import defaulticon from '@/assets/icon.svg';
+import down from '../../assets/project/down.svg';
+import up from '../../assets/project/up.svg';
+import defaulticon from '../../assets/icon.svg';
 import check from '../../assets/storage/check-mark.svg';
 import plus from '../../assets/plus.svg';
 import check1 from '../../assets/storage/check.svg';
@@ -219,7 +220,7 @@ function CategoryDetail() {
                                     onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
                                 >
                                     <span>{sortType}</span>
-                                    <span className="arrow"><img src={down} alt="" /></span>
+                                    <span className="arrow"><img src={sortDropdownOpen ? up : down} alt="" /></span>
                                 </button>
                                 {sortDropdownOpen && (
                                     <ul className="sort-menu">
