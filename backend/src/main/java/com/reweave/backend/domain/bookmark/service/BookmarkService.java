@@ -234,6 +234,23 @@ public class BookmarkService {
         return BookmarkStatusResponse.from(findActive(userId, bookmarkId));
     }
 
+    // AI 분석 성공 결과 반영 (비동기 리스너에서 호출, 커밋 완료를 위해 북마크를 다시 조회해서 처리)
+    @Transactional
+    public void applyAnalysisResult(Long bookmarkId, Long userId, String summary, Long aiCategoryId) {
+        bookmarkRepository.findById(bookmarkId).ifPresent(bookmark -> {
+            Category aiCategory = aiCategoryId == null
+                    ? null
+                    : categoryRepository.findByIdAndUserId(aiCategoryId, userId).orElse(null);
+            bookmark.completeAnalysis(summary, aiCategory);
+        });
+    }
+
+    // AI 분석 실패 처리 (비동기 리스너에서 호출)
+    @Transactional
+    public void markAnalysisFailed(Long bookmarkId) {
+        bookmarkRepository.findById(bookmarkId).ifPresent(Bookmark::failAnalysis);
+    }
+
     // ===== 내부 메서드 =====
 
     private Bookmark findActive(Long userId, Long bookmarkId) {
