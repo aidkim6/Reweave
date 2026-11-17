@@ -343,8 +343,8 @@ function CategoryDetail() {
             )}
 
             {activeModal === 'delete' && (
-                <div className="modal-overlay" onClick={() => setActiveModal(null)}>
-                    <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-overlay-delete" onClick={() => setActiveModal(null)}>
+                    <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
                         <p className="delete-msg">
                             정말로 <strong>선택한 링크를</strong><br />삭제하시겠습니까?
                         </p>
