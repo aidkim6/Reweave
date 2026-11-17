@@ -1,11 +1,14 @@
 package com.reweave.backend.domain.ai.service;
 
+import com.reweave.backend.domain.ai.dto.AiBookmarkAnalysisResult;
 import com.reweave.backend.domain.ai.dto.AiRecallResponse;
 import com.reweave.backend.domain.ai.dto.AiRecommendRequest;
 import com.reweave.backend.domain.ai.dto.AiRecommendResponse;
 import com.reweave.backend.domain.ai.event.PurposeGroupHeadlineRequestedEvent;
 import com.reweave.backend.domain.bookmark.entity.Bookmark;
 import com.reweave.backend.domain.bookmark.repository.BookmarkRepository;
+import com.reweave.backend.domain.category.entity.Category;
+import com.reweave.backend.domain.category.repository.CategoryRepository;
 import com.reweave.backend.domain.purposegroup.entity.PurposeGroup;
 import com.reweave.backend.domain.purposegroup.entity.PurposeGroupBookmark;
 import com.reweave.backend.domain.purposegroup.entity.PurposeGroupStatus;
@@ -47,6 +50,7 @@ public class AiService {
     private String apiUrl;
 
     private final BookmarkRepository bookmarkRepository;
+    private final CategoryRepository categoryRepository;
     private final PurposeGroupRepository purposeGroupRepository;
     private final PurposeGroupBookmarkRepository purposeGroupBookmarkRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -67,6 +71,10 @@ public class AiService {
     private static final int HEADLINE_TIMEOUT_SECONDS = 15;
     private static final int MAX_HEADLINE_LENGTH = 30;
     private static final String DEFAULT_HEADLINE = "오늘 이 링크를 다시 읽어보세요!";
+
+    private static final int ANALYSIS_TIMEOUT_SECONDS = 20;
+    private static final int MAX_ANALYSIS_CONTENT_LENGTH = 3000;
+    private static final int MAX_ANALYSIS_SUMMARY_LENGTH = 300;
 
     // ===================== 북마크 추천 (기존 API, 응답 형태 동일) =====================
 
@@ -281,6 +289,103 @@ public class AiService {
                 .replaceAll("^[\"'\\u201C\\u201D\\u2018\\u2019\\s]+|[\"'\\u201C\\u201D\\u2018\\u2019\\s]+$", "")
                 .trim();
         return s.length() > MAX_HEADLINE_LENGTH ? s.substring(0, MAX_HEADLINE_LENGTH) : s;
+    }
+
+    // ===================== 북마크 저장 후 AI 분석 (요약 + 카테고리 자동분류) =====================
+
+    public Optional<AiBookmarkAnalysisResult> analyzeBookmark(Long bookmarkId, Long userId) {
+        Bookmark bookmark = bookmarkRepository.findById(bookmarkId).orElse(null);
+        if (bookmark == null) {
+            return Optional.empty();
+        }
+
+        List<Category> categories = categoryRepository.findAllByUserIdOrderBySortOrderAscIdAsc(userId);
+        String categoryListText = categories.isEmpty()
+                ? "(없음)"
+                : categories.stream()
+                        .map(c -> String.format("[ID: %d] %s", c.getId(), c.getCategoryName()))
+                        .collect(Collectors.joining("\n"));
+
+        String content = bookmark.getContent() != null ? bookmark.getContent() : "";
+        String truncatedContent = content.length() > MAX_ANALYSIS_CONTENT_LENGTH
+                ? content.substring(0, MAX_ANALYSIS_CONTENT_LENGTH) + "..."
+                : content;
+
+        String prompt = String.format("""
+                당신은 저장된 링크의 내용을 분석해 요약하고 알맞은 카테고리로 분류하는 AI 어시스턴트입니다.
+
+                제목: '%s'
+                내용: '%s'
+
+                사용자의 기존 카테고리 목록:
+                %s
+
+                [작업]
+                1. 위 내용을 2문장 이내의 한국어로 요약하세요.
+                2. 기존 카테고리 목록 중 이 링크와 가장 잘 맞는 카테고리가 있다면 그 ID를 고르고, 없다면 NONE을 고르세요.
+
+                [응답 형식]
+                요약: (2문장 이내 한국어 요약)
+                카테고리ID: (ID 또는 NONE)
+                """, bookmark.getTitle(), truncatedContent, categoryListText);
+
+        Map<String, Object> requestBody = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt)
+                        ))
+                )
+        );
+
+        long start = System.currentTimeMillis();
+        try {
+            Map response = webClient.post()
+                    .uri(apiUrl)
+                    .header("x-goog-api-key", apiKey)
+                    .header("Content-Type", "application/json")
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .retryWhen(geminiRetrySpec())
+                    .timeout(Duration.ofSeconds(ANALYSIS_TIMEOUT_SECONDS))
+                    .block();
+
+            String rawResult = parseGeminiResponse(response);
+            String summary = extractAnalysisSummary(rawResult);
+            Long aiCategoryId = extractAnalysisCategoryId(rawResult, categories);
+
+            log.info("Gemini 북마크 분석 완료 bookmarkId={} elapsed={}ms", bookmarkId, System.currentTimeMillis() - start);
+            return Optional.of(new AiBookmarkAnalysisResult(summary, aiCategoryId));
+        } catch (Exception e) {
+            log.warn("AI 북마크 분석 실패 bookmarkId={} elapsed={}ms: {}",
+                    bookmarkId, System.currentTimeMillis() - start, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private String extractAnalysisSummary(String text) {
+        if (text == null) return "";
+        Pattern pattern = Pattern.compile("요약\\s*:\\s*(.*?)(?=\\n?카테고리ID|$)", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(text);
+        String summary = matcher.find() ? matcher.group(1).trim() : text.trim();
+        return summary.length() > MAX_ANALYSIS_SUMMARY_LENGTH
+                ? summary.substring(0, MAX_ANALYSIS_SUMMARY_LENGTH) + "..."
+                : summary;
+    }
+
+    private Long extractAnalysisCategoryId(String text, List<Category> validCategories) {
+        if (text == null) return null;
+        Pattern pattern = Pattern.compile("카테고리ID\\s*:\\s*(\\S+)");
+        Matcher matcher = pattern.matcher(text);
+        if (!matcher.find()) return null;
+
+        String raw = matcher.group(1).trim();
+        try {
+            Long id = Long.parseLong(raw);
+            return validCategories.stream().anyMatch(c -> c.getId().equals(id)) ? id : null;
+        } catch (NumberFormatException e) {
+            return null; // NONE 등
+        }
     }
 
     // ===================== 공통: 재시도 =====================
