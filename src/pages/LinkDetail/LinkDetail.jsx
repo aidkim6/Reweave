@@ -36,6 +36,8 @@ const LinkDetail = () => {
   const [modal, setModal] = useState(null); // 'move' | 'delete' | null
   const [targetCategoryId, setTargetCategoryId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [editingMemo, setEditingMemo] = useState(false);
+  const [memoDraft, setMemoDraft] = useState('');
   const toastTimer = useRef(null);
   const menuRef = useRef(null);
 
@@ -130,6 +132,26 @@ const LinkDetail = () => {
     api.post(`/api/bookmarks/${id}/view`).catch((e) => {
       console.log('열람 기록 실패', e.response?.status, e.response?.data);
     });
+  };
+
+  // 메모 수정 시작 (메모 박스를 누르면)
+  const startEditMemo = () => {
+    if (editingMemo) return;
+    setMemoDraft(link.memo ?? '');
+    setEditingMemo(true);
+  };
+
+  // 메모 저장 (입력창 바깥을 누르면)
+  const saveMemo = async () => {
+    setEditingMemo(false);
+    if (memoDraft === (link.memo ?? '')) return; // 바뀐 게 없으면 요청 안 보냄
+    try {
+      await api.patch(`/api/bookmarks/${id}`, { memo: memoDraft });
+      await fetchLink();
+    } catch (e) {
+      console.log('메모 저장 실패', e.response?.status, e.response?.data);
+      showToast('메모를 저장하지 못했습니다');
+    }
   };
 
   const openMoveModal = () => {
@@ -278,12 +300,30 @@ const LinkDetail = () => {
             <p>{link.summary}</p>
           </div>
         )}
-        {link.memo && (
-          <div className="link-box">
-            <h2>메모</h2>
-            <p className="link-memo">{link.memo}</p>
-          </div>
-        )}
+
+        {/* 메모: 항상 표시, 누르면 바로 수정 */}
+        <div
+          className="link-box link-memo-box"
+          onClick={startEditMemo}
+          style={{ cursor: editingMemo ? 'text' : 'pointer' }}
+        >
+          <h2>메모</h2>
+          {editingMemo ? (
+            <textarea
+              className="link-memo-input"
+              value={memoDraft}
+              onChange={(e) => setMemoDraft(e.target.value)}
+              onBlur={saveMemo}
+              placeholder="메모를 입력해 주세요"
+              rows={3}
+              autoFocus
+            />
+          ) : (
+            <p className={`link-memo ${link.memo ? '' : 'empty'}`}>
+              {link.memo || '메모를 추가해 보세요'}
+            </p>
+          )}
+        </div>
       </section>
 
       <section className="link-projects">
