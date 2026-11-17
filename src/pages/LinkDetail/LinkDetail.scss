@@ -574,3 +574,21 @@
     }
   }
 }
+.link-detail {
+  .link-memo-input {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    color: inherit;
+    line-height: inherit;
+  }
+
+  .link-memo.empty {
+    opacity: 0.5; // "메모를 추가해 보세요" 안내 문구는 흐리게
+  }
+}

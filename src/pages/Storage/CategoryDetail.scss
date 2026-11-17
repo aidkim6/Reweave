@@ -520,6 +520,11 @@
         background-color: #2d2f2d;
         border: none;
         border-radius: 16px;
+        position: relative;
+        align-self: center;
+        margin: 0;
+        bottom: auto;
+        transform: none;
 
         .delete-msg {
             font-size: 16px;
@@ -592,5 +597,16 @@
                 max-height: 80vh;
             }
         }
+
+    }
+
+    .modal-overlay-delete {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
     }
 }
